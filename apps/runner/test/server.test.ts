@@ -2,6 +2,25 @@ import { describe, expect, it } from "vitest";
 import { createServer } from "../src/server";
 
 describe("runner API", () => {
+  it("connects a GitHub repository", async () => {
+    const app = createServer();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/repositories",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        defaultBranch: "main"
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      owner: "example",
+      name: "repo",
+      defaultBranch: "main"
+    });
+  });
+
   it("creates a task and waits for plan approval", async () => {
     const app = createServer();
     const response = await app.inject({
@@ -46,5 +65,96 @@ describe("runner API", () => {
 
     expect(JSON.stringify(logs.json())).not.toContain("ghp_");
   });
-});
 
+  it("approves a plan and creates a pending PR approval", async () => {
+    const app = createServer();
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix login button",
+        prompt: "The login button does not respond when clicked.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+    const { taskId } = created.json<{ taskId: string }>();
+
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "PLAN"
+    );
+
+    expect(planApproval).toBeDefined();
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/approve`
+    });
+
+    expect(approved.statusCode).toBe(200);
+    expect(approved.json()).toMatchObject({
+      status: "WAITING_FOR_PR_APPROVAL"
+    });
+
+    const afterApproval = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const body = afterApproval.json<{
+      approvals: Array<{ type: string; status: string }>;
+      diff: { filesChanged: string[] };
+      tests: Array<{ status: string }>;
+    }>();
+
+    expect(body.approvals).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "CREATE_PR", status: "PENDING" })
+      ])
+    );
+    expect(body.diff.filesChanged).toContain("src/login.ts");
+    expect(body.tests.every((test) => test.status === "PASSED")).toBe(true);
+  });
+
+  it("rejects an approval and cancels the task", async () => {
+    const app = createServer();
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Avoid auth provider changes",
+        prompt: "Fix the issue without touching the auth provider.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+    const { taskId } = created.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "PLAN"
+    );
+
+    const rejected = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/reject`,
+      payload: {
+        reason: "Please narrow the plan first."
+      }
+    });
+
+    expect(rejected.statusCode).toBe(200);
+    expect(rejected.json()).toMatchObject({
+      status: "CANCELLED"
+    });
+  });
+});

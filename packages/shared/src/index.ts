@@ -54,6 +54,12 @@ export const RepositorySchema = z.object({
 });
 export type Repository = z.infer<typeof RepositorySchema>;
 
+export const ConnectRepositoryRequestSchema = z.object({
+  repositoryUrl: z.string().url(),
+  defaultBranch: z.string().min(1).default("main")
+});
+export type ConnectRepositoryRequest = z.infer<typeof ConnectRepositoryRequestSchema>;
+
 export const PlanOutputSchema = z.object({
   summary: z.string(),
   assumptions: z.array(z.string()),
@@ -162,4 +168,3 @@ export const ApiErrorSchema = z.object({
   details: z.unknown().optional()
 });
 export type ApiError = z.infer<typeof ApiErrorSchema>;
-

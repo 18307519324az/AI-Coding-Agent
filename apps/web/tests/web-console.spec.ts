@@ -5,8 +5,8 @@ test("dashboard shows task queue and approval state", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
   await expect(page.getByRole("link", { name: "New agent task" })).toBeVisible();
-  await expect(page.getByText("Fix login button click handling")).toBeVisible();
-  await expect(page.getByText("WAITING FOR PR APPROVAL")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Agent Tasks" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
 });
 
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {
@@ -22,7 +22,7 @@ test("create task form exposes loading, error, disabled, and success states", as
 
   await page.getByRole("button", { name: "Create agent task" }).click();
   await expect(page.getByRole("button", { name: "Creating task..." })).toBeDisabled();
-  await expect(page.getByText("Task accepted. Plan generation is queued.")).toBeVisible();
+  await expect(page.getByText("Task accepted. Plan generation is queued", { exact: false })).toBeVisible();
 });
 
 test("task detail shows plan, diff, logs, tests, and approval controls", async ({ page }) => {
@@ -35,3 +35,13 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
   await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
 });
 
+test("repository form saves through the runner", async ({ page }) => {
+  await page.goto("/repositories/new");
+
+  await page.getByLabel("GitHub repository URL").fill("https://github.com/acme/agent-fixture");
+  await page.getByLabel("Default branch").fill("main");
+  await page.getByRole("button", { name: "Save repository" }).click();
+
+  await expect(page.getByRole("button", { name: "Saving repository..." })).toBeDisabled();
+  await expect(page.getByText("Repository connection saved for task creation.")).toBeVisible();
+});

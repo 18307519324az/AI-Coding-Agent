@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { MetricCard } from "@/components/metric-card";
 import { StatusBadge } from "@/components/status-badge";
-import { getRepository, repositories, tasks } from "@/lib/mock-data";
+import { listRepositories, listTasks } from "@/lib/runner-api";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const [repositories, tasks] = await Promise.all([listRepositories(), listTasks()]);
   const runningTasks = tasks.filter((task) => !["COMPLETED", "CANCELLED"].includes(task.status));
   const completedTasks = tasks.filter((task) => task.status === "COMPLETED");
   const prCount = tasks.filter((task) => task.prUrl).length;
+  const repositoryById = new Map(repositories.map((repo) => [repo.id, repo]));
 
   return (
     <>
@@ -58,7 +60,7 @@ export default function DashboardPage() {
               </thead>
               <tbody>
                 {tasks.map((task) => {
-                  const repo = getRepository(task.repositoryId);
+                  const repo = repositoryById.get(task.repositoryId);
                   return (
                     <tr key={task.id}>
                       <td>
@@ -94,4 +96,3 @@ export default function DashboardPage() {
     </>
   );
 }
-

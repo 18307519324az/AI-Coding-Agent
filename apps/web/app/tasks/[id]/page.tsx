@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StateRail } from "@/components/state-rail";
 import { StatusBadge } from "@/components/status-badge";
-import { approvals, diffSummary, getRepository, getTask, logs, testResults } from "@/lib/mock-data";
+import { getTaskDetail } from "@/lib/runner-api";
 
 export default async function TaskDetailPage({
   params
@@ -10,15 +10,15 @@ export default async function TaskDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const task = getTask(id);
+  const task = await getTaskDetail(id);
   if (!task) {
     notFound();
   }
 
-  const repo = getRepository(task.repositoryId);
-  const taskApprovals = approvals.filter((approval) => approval.taskId === task.id);
-  const taskLogs = logs.filter((log) => log.taskId === task.id);
-  const taskTests = testResults.filter((test) => test.taskId === task.id);
+  const repo = task.repository;
+  const taskApprovals = task.approvals;
+  const taskLogs = task.logs;
+  const taskTests = task.tests;
 
   return (
     <>
@@ -121,10 +121,10 @@ export default async function TaskDetailPage({
       <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
           <h2>Diff Preview</h2>
-          {diffSummary.taskId === task.id ? (
+          {task.diff ? (
             <>
-              <p className="muted small">{diffSummary.filesChanged.join(", ")}</p>
-              <pre className="diff">{diffSummary.patch}</pre>
+              <p className="muted small">{task.diff.filesChanged.join(", ")}</p>
+              <pre className="diff">{task.diff.patch}</pre>
             </>
           ) : (
             <div className="empty-state">
@@ -171,4 +171,3 @@ export default async function TaskDetailPage({
     </>
   );
 }
-

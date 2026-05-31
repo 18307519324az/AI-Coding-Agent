@@ -2,22 +2,53 @@
 
 import { useState } from "react";
 
+const runnerBaseUrl = process.env.NEXT_PUBLIC_RUNNER_API_URL ?? "http://127.0.0.1:8787";
+
 export function CreateTaskForm() {
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [createdTaskId, setCreatedTaskId] = useState("");
   const [error, setError] = useState("");
 
   return (
     <form
       className="form panel"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
         setError("");
+        setCreatedTaskId("");
         setSubmitting(true);
-        window.setTimeout(() => {
+
+        const form = new FormData(event.currentTarget);
+        try {
+          const response = await fetch(`${runnerBaseUrl}/api/tasks`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              repositoryUrl: form.get("repositoryUrl"),
+              issueUrl: form.get("issueUrl") || undefined,
+              title: form.get("title"),
+              prompt: form.get("prompt"),
+              branchPrefix: form.get("branchPrefix") || "agent",
+              testCommandOverride: form.get("testCommand") || undefined,
+              allowDependencyInstall: form.get("allowInstall") === "on",
+              allowCreatePr: form.get("allowPr") === "on"
+            })
+          });
+
+          if (!response.ok) {
+            const body = (await response.json().catch(() => undefined)) as { error?: string } | undefined;
+            throw new Error(body?.error ?? "Runner rejected the task request.");
+          }
+
+          const body = (await response.json()) as { taskId: string };
+          setCreatedTaskId(body.taskId);
+        } catch (submitError) {
+          setError(submitError instanceof Error ? submitError.message : "Runner offline. Try again after it restarts.");
+        } finally {
           setSubmitting(false);
-          setSubmitted(true);
-        }, 350);
+        }
       }}
     >
       <div className="field">
@@ -86,7 +117,9 @@ export function CreateTaskForm() {
       </label>
 
       {error ? <span className="error-text">{error}</span> : null}
-      {submitted ? <span className="success-text">Task accepted. Plan generation is queued.</span> : null}
+      {createdTaskId ? (
+        <span className="success-text">Task accepted. Plan generation is queued for {createdTaskId}.</span>
+      ) : null}
 
       <div className="toolbar">
         <button className="button" disabled={submitting} type="submit">
@@ -106,4 +139,3 @@ export function CreateTaskForm() {
     </form>
   );
 }
-

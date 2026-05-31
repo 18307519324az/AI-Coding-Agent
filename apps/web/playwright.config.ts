@@ -17,10 +17,9 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: "pnpm dev",
+    command: "pnpm --dir ../.. --parallel --filter web --filter runner dev",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000
   }
 });
-

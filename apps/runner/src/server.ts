@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import {
+  ConnectRepositoryRequestSchema,
   CreatePrRequestSchema,
   CreateTaskRequestSchema,
   RejectApprovalRequestSchema
@@ -7,6 +8,7 @@ import {
 import type { Approval } from "@ai-coding-agent/shared";
 import Fastify from "fastify";
 import { z } from "zod";
+import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { approvePlanFlow, approvePrFlow, createTaskFlow } from "./mock-flow";
@@ -57,6 +59,47 @@ export function createServer(store: RunnerStore = createStore()) {
     tasks: [...store.tasks.values()].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   }));
 
+  app.get("/api/repositories", async () => ({
+    repositories: [...store.repositories.values()].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }));
+
+  app.post("/api/repositories", async (request, reply) => {
+    const parsed = ConnectRepositoryRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: "Invalid repository request.",
+        details: parsed.error.flatten()
+      });
+    }
+
+    try {
+      const ref = parseGitHubRepositoryUrl(parsed.data.repositoryUrl);
+      const existing = [...store.repositories.values()].find(
+        (repository) => repository.owner === ref.owner && repository.name === ref.name
+      );
+      if (existing) {
+        return reply.status(200).send(existing);
+      }
+
+      const repository = {
+        id: createId("repo"),
+        owner: ref.owner,
+        name: ref.name,
+        url: ref.url,
+        defaultBranch: parsed.data.defaultBranch,
+        provider: "github" as const,
+        createdAt: new Date()
+      };
+      store.repositories.set(repository.id, repository);
+
+      return reply.status(201).send(repository);
+    } catch (error) {
+      return reply.status(400).send({
+        error: error instanceof Error ? error.message : "Failed to connect repository."
+      });
+    }
+  });
+
   app.get("/api/tasks/:taskId", async (request, reply) => {
     const { taskId } = ParamsSchema.parse(request.params);
     const task = store.tasks.get(taskId);
@@ -67,6 +110,8 @@ export function createServer(store: RunnerStore = createStore()) {
     return {
       ...task,
       approvals: listTaskApprovals(store, taskId),
+      logs: store.logs.get(taskId) ?? [],
+      repository: store.repositories.get(task.repositoryId),
       tests: store.tests.get(taskId) ?? [],
       diff: store.diffs.get(taskId)
     };
@@ -191,4 +236,3 @@ export function createServer(store: RunnerStore = createStore()) {
 
   return app;
 }
-

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
-import { getRepository, tasks } from "@/lib/mock-data";
+import { listRepositories, listTasks } from "@/lib/runner-api";
 
-export default function TasksPage() {
+export default async function TasksPage() {
+  const [repositories, tasks] = await Promise.all([listRepositories(), listTasks()]);
+  const repositoryById = new Map(repositories.map((repo) => [repo.id, repo]));
+
   return (
     <>
       <header className="page-header">
@@ -50,7 +53,7 @@ export default function TasksPage() {
               </thead>
               <tbody>
                 {tasks.map((task) => {
-                  const repo = getRepository(task.repositoryId);
+                  const repo = repositoryById.get(task.repositoryId);
                   return (
                     <tr key={task.id}>
                       <td>
@@ -78,4 +81,3 @@ export default function TasksPage() {
     </>
   );
 }
-

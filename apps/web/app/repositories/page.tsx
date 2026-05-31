@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { repositories, tasks } from "@/lib/mock-data";
+import { listRepositories, listTasks } from "@/lib/runner-api";
 
-export default function RepositoriesPage() {
+export default async function RepositoriesPage() {
+  const [repositories, tasks] = await Promise.all([listRepositories(), listTasks()]);
+
   return (
     <>
       <header className="page-header">
@@ -57,4 +59,3 @@ export default function RepositoriesPage() {
     </>
   );
 }
-
