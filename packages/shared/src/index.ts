@@ -163,6 +163,26 @@ export const DiffSummarySchema = z.object({
 });
 export type DiffSummary = z.infer<typeof DiffSummarySchema>;
 
+export const PackageManagerSchema = z.enum(["pnpm", "npm", "yarn", "bun", "unknown"]);
+export type PackageManager = z.infer<typeof PackageManagerSchema>;
+
+export const ProjectContextSchema = z.object({
+  rootPath: z.string(),
+  packageManager: PackageManagerSchema,
+  projectKind: z.enum(["next", "vite", "node", "monorepo", "unknown"]),
+  hasFrontend: z.boolean(),
+  scripts: z.record(z.string()),
+  recommendedCommands: z.object({
+    install: z.string().optional(),
+    lint: z.string().optional(),
+    typecheck: z.string().optional(),
+    test: z.string().optional(),
+    e2e: z.string().optional()
+  }),
+  relevantFiles: z.array(z.string())
+});
+export type ProjectContext = z.infer<typeof ProjectContextSchema>;
+
 export const ApiErrorSchema = z.object({
   error: z.string(),
   details: z.unknown().optional()
