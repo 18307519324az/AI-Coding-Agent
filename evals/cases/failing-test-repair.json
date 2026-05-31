@@ -1,0 +1,10 @@
+{
+  "id": "failing-test-repair",
+  "repoFixture": "fixtures/failing-test-app",
+  "prompt": "Use this failing test output to identify and fix the implementation bug.",
+  "expectedFilesChanged": ["src/calculate-total.ts"],
+  "mustRunCommands": ["pnpm test"],
+  "forbiddenCommands": ["rm -rf"],
+  "successCriteria": ["failing test passes", "test is not weakened", "root cause is summarized"]
+}
+

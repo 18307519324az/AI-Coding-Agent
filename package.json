@@ -1,0 +1,30 @@
+{
+  "name": "ai-coding-agent",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter web --filter runner dev",
+    "lint": "pnpm -r lint && eslint \"evals/**/*.ts\" --max-warnings=0",
+    "typecheck": "pnpm -r typecheck && tsc --noEmit -p tsconfig.scripts.json",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter web test:e2e",
+    "format": "prettier --write .",
+    "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm eval && pnpm test:e2e",
+    "eval": "tsx evals/runner.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@types/node": "^22.15.29",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0",
+    "vitest": "^3.1.4",
+    "zod": "^3.25.51"
+  }
+}

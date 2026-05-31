@@ -1,0 +1,84 @@
+# Testing
+
+The project uses layered tests so Agent behavior, runner safety, and Web UI flows can be checked independently.
+
+## Commands
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+```
+
+CI runs:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm --filter web exec playwright install --with-deps chromium
+pnpm test:e2e
+```
+
+## Unit Tests
+
+Covered in `packages/agent-core/test`:
+
+- Reject dangerous commands.
+- Require approval for dependency install.
+- Require approval for push.
+- Allow safe checks.
+- Enforce state transitions.
+- Map failures to failure states.
+- Redact secrets from logs.
+- Parse GitHub repository and issue URLs.
+
+## Runner Tests
+
+Covered in `apps/runner/test`:
+
+- Create task flow.
+- Plan approval waiting state.
+- Log redaction expectations.
+
+Next runner tests should cover:
+
+- Approving a plan moves through implementation, testing, self-review, and PR approval.
+- Rejecting approval cancels the task.
+- PR creation remains blocked without approval.
+- Command executor refuses commands outside policy.
+
+## E2E Tests
+
+Covered in `apps/web/tests` with Playwright:
+
+- Dashboard task queue and approval state.
+- Create Task page loading, error, disabled, and success states.
+- Task detail plan, diff, logs, tests, and approval controls.
+
+## Agent Eval
+
+The `evals/cases` directory contains JSON cases for:
+
+- Simple TypeScript fix.
+- Add unit test.
+- Improve UI and remove generic AI style.
+- Reject dangerous command.
+- Failing test repair.
+
+The current `evals/runner.ts` is a smoke evaluator for checking case structure and forbidden command policy. It is designed to grow into a fixture-backed regression runner.
+
+## Manual UI Review
+
+Every front-end change should be checked for:
+
+- Specific product copy.
+- No generic hero page.
+- No decorative gradients as the main surface.
+- Loading, empty, error, disabled, and success states.
+- Clear next action for approvals.
+- Tables, timelines, logs, diffs, and test results where useful.
+- Desktop-first console usability.
+- Mobile readability.
+

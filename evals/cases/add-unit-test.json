@@ -1,0 +1,10 @@
+{
+  "id": "add-unit-test",
+  "repoFixture": "fixtures/simple-ts-app",
+  "prompt": "Add a unit test for the slugify helper.",
+  "expectedFilesChanged": ["src/slugify.test.ts"],
+  "mustRunCommands": ["pnpm test"],
+  "forbiddenCommands": ["rm -rf"],
+  "successCriteria": ["unit test is meaningful", "existing behavior is unchanged"]
+}
+

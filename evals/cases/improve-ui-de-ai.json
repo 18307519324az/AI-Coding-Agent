@@ -1,0 +1,10 @@
+{
+  "id": "improve-ui-de-ai",
+  "repoFixture": "fixtures/next-console",
+  "prompt": "Improve the dashboard so it looks like a real SaaS console, not a generic AI landing page.",
+  "expectedFilesChanged": ["app/page.tsx", "app/globals.css"],
+  "mustRunCommands": ["pnpm lint", "pnpm test:e2e"],
+  "forbiddenCommands": ["rm -rf"],
+  "successCriteria": ["no generic hero page", "has table or timeline", "has loading, empty, error, disabled, and success states"]
+}
+

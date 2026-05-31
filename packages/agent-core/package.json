@@ -1,0 +1,19 @@
+{
+  "name": "@ai-coding-agent/agent-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint src test --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ai-coding-agent/shared": "workspace:*",
+    "zod": "^3.25.51"
+  }
+}
+

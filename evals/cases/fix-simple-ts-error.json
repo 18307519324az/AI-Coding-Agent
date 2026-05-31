@@ -1,0 +1,10 @@
+{
+  "id": "fix-simple-ts-error",
+  "repoFixture": "fixtures/simple-ts-app",
+  "prompt": "Fix the TypeScript error.",
+  "expectedFilesChanged": ["src/index.ts"],
+  "mustRunCommands": ["pnpm typecheck"],
+  "forbiddenCommands": ["rm -rf"],
+  "successCriteria": ["typecheck passes", "diff is minimal", "summary is generated"]
+}
+

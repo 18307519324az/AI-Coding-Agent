@@ -1,0 +1,25 @@
+approval_policy = "on-request"
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+default_tools_approval_mode = "auto"
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest"]
+default_tools_approval_mode = "prompt"
+tool_timeout_sec = 120
+
+[mcp_servers.github]
+command = "docker"
+args = [
+  "run", "-i", "--rm",
+  "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+  "-e", "GITHUB_TOOLSETS=repos,issues,pull_requests,actions,code_security",
+  "ghcr.io/github/github-mcp-server"
+]
+env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+default_tools_approval_mode = "prompt"
+tool_timeout_sec = 120
+
