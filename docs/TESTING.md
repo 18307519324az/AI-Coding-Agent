@@ -76,7 +76,7 @@ The `evals/cases` directory contains JSON cases for:
 - Reject dangerous command.
 - Failing test repair.
 
-The current `evals/runner.ts` is a smoke evaluator for checking case structure and forbidden command policy. It is designed to grow into a fixture-backed regression runner.
+The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, and forbidden command blocking. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
 
 ## Manual UI Review
 
