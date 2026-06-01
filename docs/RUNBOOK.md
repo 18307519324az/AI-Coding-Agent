@@ -165,6 +165,23 @@ Actions:
 - Confirm logs show `REPO_CLONING` before `CONTEXT_ANALYZING`.
 - If verification fails, inspect stored test output before retrying or approving PR creation.
 
+## E2E Artifacts
+
+When a task has an E2E command, the runner records a task artifact after the command finishes.
+
+Configuration:
+
+```bash
+RUNNER_ARTIFACT_DIR=.runner-data/artifacts
+```
+
+Actions:
+
+- Keep `RUNNER_ARTIFACT_DIR` on a durable volume when reports must survive deploys.
+- Inspect `<artifact_dir>/<task_id>/e2e/playwright-report/index.html` for the copied Playwright report.
+- Inspect `<artifact_dir>/<task_id>/e2e/screenshots/` for copied `test-results/**/*.png` screenshots.
+- If artifact paths are present but files are missing, confirm Playwright generated `playwright-report/` and `test-results/` inside the task workspace before cleanup.
+
 ## PR Creation Failed
 
 Checks:

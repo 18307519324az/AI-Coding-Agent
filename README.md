@@ -50,6 +50,7 @@ RUNNER_API_KEY=...
 OPENAI_AGENT_MODE=deterministic # set to live to generate plans through OpenAI Responses API
 OPENAI_MODEL=gpt-5.2
 WORKSPACE_ROOT=.workspaces
+RUNNER_ARTIFACT_DIR=.runner-data/artifacts
 RUNNER_STORE_FILE=.runner-data/store.json
 RUNNER_SQLITE_FILE=.runner-data/store.db
 DATABASE_URL=file:./.runner-data/dev.db
@@ -81,6 +82,7 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 - Runner API routes require `Authorization: Bearer <RUNNER_API_KEY>` when `RUNNER_API_KEY` is configured; `/health` stays public for probes.
 - GitHub write operations must be approved before execution.
 - Tasks use isolated workspace directories under `.workspaces/`.
+- Playwright reports and screenshots are copied under `RUNNER_ARTIFACT_DIR`.
 - Terminal task workspaces are retained for `RUNNER_WORKSPACE_RETENTION_HOURS` and then removed by the cleanup worker.
 
 ## MVP Flow

@@ -54,6 +54,7 @@ export type ServerOptions = {
   planGenerator?: PlanGenerator;
   implementationGenerator?: ImplementationGenerator;
   commandRunner?: CommandRunner;
+  e2eArtifactRoot?: string;
   branchPublisher?: BranchPublisher;
   pullRequestCreator?: PullRequestCreator;
 };
@@ -320,7 +321,8 @@ export function createServer(store: RunnerStore = createStore(), options: Server
       return approvePlanFlow(store, task, {
         executeCommands: shouldUseWorkspaceExecution(options),
         commandRunner: options.commandRunner,
-        implementationGenerator: options.implementationGenerator
+        implementationGenerator: options.implementationGenerator,
+        e2eArtifactRoot: options.e2eArtifactRoot
       });
     }
     if (approval.type === "CREATE_PR") {

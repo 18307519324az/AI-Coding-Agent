@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ProjectContext } from "@ai-coding-agent/shared";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { createServer } from "../src/server";
 
 function createWorkspaceContext(rootPath: string): ProjectContext {
@@ -227,12 +230,21 @@ describe("runner API", () => {
 
   it("runs workspace verification commands after plan approval", async () => {
     const seenCommands: string[] = [];
+    const rootPath = await fs.mkdtemp(path.join(os.tmpdir(), "ai-coding-agent-server-"));
+    const artifactRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-coding-agent-artifacts-"));
     const app = createServer(undefined, {
       workspaceExecution: true,
-      repositoryCloner: async (input) => `D:/runner-workspaces/${input.taskId}/repo`,
+      repositoryCloner: async () => rootPath,
       projectAnalyzer: async (rootPath) => createWorkspaceContext(rootPath),
+      e2eArtifactRoot: artifactRoot,
       commandRunner: async (input) => {
         seenCommands.push(input.command);
+        if (input.command === "pnpm test:e2e") {
+          await fs.mkdir(path.join(input.cwd, "playwright-report"), { recursive: true });
+          await fs.writeFile(path.join(input.cwd, "playwright-report", "index.html"), "<html>report</html>\n");
+          await fs.mkdir(path.join(input.cwd, "test-results", "task-detail"), { recursive: true });
+          await fs.writeFile(path.join(input.cwd, "test-results", "task-detail", "task-detail.png"), "png");
+        }
         return {
           command: input.command,
           status: "PASSED",
@@ -301,6 +313,8 @@ describe("runner API", () => {
         screenshots: [expect.objectContaining({ path: expect.stringContaining("task-detail.png") })]
       })
     ]);
+    await expect(fs.readFile(body.e2eArtifacts[0].reportUrl, "utf8")).resolves.toContain("report");
+    await expect(fs.readFile(body.e2eArtifacts[0].screenshots[0].path, "utf8")).resolves.toBe("png");
   });
 
   it("stops a workspace task when a verification command fails", async () => {

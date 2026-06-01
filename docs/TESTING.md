@@ -47,7 +47,7 @@ Covered in `apps/runner/test`:
 - Workspace project analysis.
 - OpenAI model adapter response validation.
 - Model-generated implementation file application.
-- E2E artifact recording for Playwright reports and screenshots.
+- E2E artifact copying for Playwright reports and `test-results` screenshots.
 - Git branch publishing guardrails.
 - Command executor workspace boundary, `.env` guard, and sensitive environment filtering.
 - Store persistence, including SQLite snapshot storage.

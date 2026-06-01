@@ -43,6 +43,7 @@ Required environment:
 RUNNER_PORT=8787
 RUNNER_HOST=0.0.0.0
 WORKSPACE_ROOT=.workspaces
+RUNNER_ARTIFACT_DIR=.runner-data/artifacts
 GITHUB_TOKEN=...
 OPENAI_API_KEY=...
 RUNNER_API_KEY=...
@@ -62,6 +63,8 @@ When `RUNNER_JOB_MODE=queued`, the runner process starts the queue worker after 
 
 When workspace cleanup is enabled, terminal task directories under `WORKSPACE_ROOT` are removed after the retention window. Mount `WORKSPACE_ROOT` on a dedicated volume so cleanup cannot affect unrelated application files.
 
+Mount `RUNNER_ARTIFACT_DIR` on durable storage if Playwright reports and screenshots must survive runner restarts or redeploys.
+
 ## Deployment Checklist
 
 - Secrets are stored in platform secret manager.
@@ -72,6 +75,7 @@ When workspace cleanup is enabled, terminal task directories under `WORKSPACE_RO
 - Web auth password and session secret are configured for the console.
 - Job worker concurrency and retry limits match runner host capacity.
 - Workspace cleanup policy is enabled.
+- E2E artifact storage is on the intended volume.
 - CI passes before deploy.
 - PR creation remains approval-gated.
 - Runner API is authenticated before public exposure.
