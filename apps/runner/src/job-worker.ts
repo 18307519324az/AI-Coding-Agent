@@ -1,8 +1,10 @@
 import type { RunnerJob } from "@ai-coding-agent/shared";
+import type { WorkerLease } from "./worker-lease";
 
 export type JobWorkerOptions = {
   concurrency?: number;
   intervalMs?: number;
+  lease?: WorkerLease;
   processNext: () => Promise<RunnerJob | undefined>;
   onError?: (error: unknown) => void;
 };
@@ -25,25 +27,38 @@ export function createJobWorker(options: JobWorkerOptions): JobWorker {
   let activeProcessors = 0;
 
   const processOnce = async (): Promise<RunnerJob | undefined> => {
+    let releaseLease: (() => Promise<void>) | undefined;
+    if (options.lease) {
+      releaseLease = await options.lease.acquire();
+      if (!releaseLease) {
+        return undefined;
+      }
+    }
+
     const availableSlots = concurrency - activeProcessors;
     if (availableSlots <= 0) {
+      await releaseLease?.();
       return undefined;
     }
 
-    const jobs = await Promise.all(
-      Array.from({ length: availableSlots }, async () => {
-        activeProcessors += 1;
-        try {
-          return await options.processNext();
-        } catch (error) {
-          options.onError?.(error);
-          return undefined;
-        } finally {
-          activeProcessors -= 1;
-        }
-      })
-    );
-    return jobs.find((job): job is RunnerJob => Boolean(job));
+    try {
+      const jobs = await Promise.all(
+        Array.from({ length: availableSlots }, async () => {
+          activeProcessors += 1;
+          try {
+            return await options.processNext();
+          } catch (error) {
+            options.onError?.(error);
+            return undefined;
+          } finally {
+            activeProcessors -= 1;
+          }
+        })
+      );
+      return jobs.find((job): job is RunnerJob => Boolean(job));
+    } finally {
+      await releaseLease?.();
+    }
   };
 
   return {

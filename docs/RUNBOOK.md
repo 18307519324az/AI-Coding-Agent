@@ -99,7 +99,7 @@ Actions:
 Use `RUNNER_JOB_MODE=queued` when task creation should return quickly and plan generation should be processed out of band.
 
 ```bash
-RUNNER_JOB_MODE=queued RUNNER_JOB_WORKER_INTERVAL_MS=1000 RUNNER_JOB_WORKER_CONCURRENCY=1 pnpm --filter runner dev
+RUNNER_JOB_MODE=queued RUNNER_JOB_WORKER_INTERVAL_MS=1000 RUNNER_JOB_WORKER_CONCURRENCY=1 RUNNER_JOB_WORKER_LOCK_FILE=.runner-data/job-worker.lock pnpm --filter runner dev
 ```
 
 Checks:
@@ -115,6 +115,7 @@ Actions:
 - Use the Web console Jobs page to inspect attempts, backoff, and terminal errors.
 - Confirm task details include a `jobs` array with `PLAN_TASK`.
 - Confirm runner logs show `Runner job worker started`.
+- Confirm all runner processes on a single host share the same `RUNNER_JOB_WORKER_LOCK_FILE` path on durable storage.
 - If jobs stay `QUEUED`, inspect `nextRunAt`. Future timestamps mean the job is waiting for retry backoff.
 - If jobs stay `QUEUED` past `nextRunAt`, confirm the worker process is running, then call `/api/jobs/process-next` to process one job manually.
 - If a job is `FAILED`, inspect `attempts`, `maxAttempts`, `error`, and the related task logs before retrying manually.

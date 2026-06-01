@@ -8,6 +8,7 @@ import {
   type ServerOptions
 } from "./server";
 import { createFileBackedStore, createSqliteBackedStore } from "./store";
+import { createFileWorkerLease } from "./worker-lease";
 import { cleanupTaskWorkspaces, createWorkspaceCleanupWorker } from "./workspace-cleanup";
 import path from "node:path";
 
@@ -28,6 +29,9 @@ const sqliteStoreFile = process.env.RUNNER_SQLITE_FILE ??
   (process.env.DATABASE_URL?.startsWith("file:") ? process.env.DATABASE_URL.slice("file:".length) : undefined);
 const jobWorkerIntervalMs = parsePositiveInteger(process.env.RUNNER_JOB_WORKER_INTERVAL_MS, 1000);
 const jobWorkerConcurrency = parsePositiveInteger(process.env.RUNNER_JOB_WORKER_CONCURRENCY, 1);
+const jobWorkerLockFile = process.env.RUNNER_JOB_WORKER_LOCK_FILE ??
+  path.resolve(process.cwd(), ".runner-data", "job-worker.lock");
+const jobWorkerLockStaleMs = parsePositiveInteger(process.env.RUNNER_JOB_WORKER_LOCK_STALE_MS, 5 * 60 * 1000);
 const jobMaxAttempts = parsePositiveInteger(process.env.RUNNER_JOB_MAX_ATTEMPTS, 3);
 const jobRetryBackoffMs = parsePositiveInteger(process.env.RUNNER_JOB_RETRY_BACKOFF_MS, 1000);
 const workspaceRetentionMs = parsePositiveHours(process.env.RUNNER_WORKSPACE_RETENTION_HOURS, 168) * 60 * 60 * 1000;
@@ -47,6 +51,10 @@ const jobWorker = shouldUseQueuedJobs(serverOptions)
   ? createJobWorker({
       concurrency: jobWorkerConcurrency,
       intervalMs: jobWorkerIntervalMs,
+      lease: createFileWorkerLease({
+        lockFile: path.resolve(process.cwd(), jobWorkerLockFile),
+        staleMs: jobWorkerLockStaleMs
+      }),
       processNext: () => processNextRunnerJob(store, createRunnerJobProcessorOptions(serverOptions)),
       onError: (error) => app.log.error({ err: error }, "Runner job worker failed.")
     })
@@ -69,7 +77,10 @@ try {
   await app.listen({ port, host });
   if (jobWorker) {
     jobWorker.start();
-    app.log.info({ concurrency: jobWorkerConcurrency, intervalMs: jobWorkerIntervalMs }, "Runner job worker started.");
+    app.log.info(
+      { concurrency: jobWorkerConcurrency, intervalMs: jobWorkerIntervalMs, lockFile: jobWorkerLockFile },
+      "Runner job worker started."
+    );
   }
   if (workspaceCleanupWorker) {
     workspaceCleanupWorker.start();

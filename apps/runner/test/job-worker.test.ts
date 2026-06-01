@@ -1,6 +1,10 @@
 import type { RunnerJob } from "@ai-coding-agent/shared";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { createJobWorker } from "../src/job-worker";
+import { createFileWorkerLease } from "../src/worker-lease";
 
 function createJob(id: string): RunnerJob {
   return {
@@ -14,6 +18,16 @@ function createJob(id: string): RunnerJob {
     startedAt: new Date(),
     completedAt: new Date()
   };
+}
+
+async function waitForCondition(condition: () => boolean): Promise<void> {
+  const startedAt = Date.now();
+  while (!condition()) {
+    if (Date.now() - startedAt > 1000) {
+      throw new Error("Timed out waiting for test condition.");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1));
+  }
 }
 
 describe("job worker", () => {
@@ -98,5 +112,60 @@ describe("job worker", () => {
     await expect(worker.processOnce()).resolves.toBeUndefined();
     expect(errors).toHaveLength(1);
     expect(errors[0]).toBeInstanceOf(Error);
+  });
+
+  it("uses a lease to prevent another worker from processing concurrently", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-coding-agent-worker-lease-"));
+    try {
+      const lockFile = path.join(tempRoot, "job-worker.lock");
+      let release: ((job: RunnerJob) => void) | undefined;
+      const firstWorker = createJobWorker({
+        lease: createFileWorkerLease({ lockFile }),
+        processNext: () => new Promise<RunnerJob>((resolve) => {
+          release = resolve;
+        })
+      });
+      const secondProcessNext = vi.fn(async () => createJob("job_b"));
+      const secondWorker = createJobWorker({
+        lease: createFileWorkerLease({ lockFile }),
+        processNext: secondProcessNext
+      });
+
+      const first = firstWorker.processOnce();
+      await waitForCondition(() => Boolean(release));
+      await expect(secondWorker.processOnce()).resolves.toBeUndefined();
+      expect(secondProcessNext).not.toHaveBeenCalled();
+
+      release?.(createJob("job_a"));
+      await expect(first).resolves.toMatchObject({
+        id: "job_a"
+      });
+
+      await expect(secondWorker.processOnce()).resolves.toMatchObject({
+        id: "job_b"
+      });
+    } finally {
+      await fs.rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("does not remove a lock file that belongs to another lease", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "ai-coding-agent-worker-lease-"));
+    try {
+      const lockFile = path.join(tempRoot, "job-worker.lock");
+      const release = await createFileWorkerLease({ heartbeatMs: 60_000, lockFile }).acquire();
+      expect(release).toBeDefined();
+
+      await fs.writeFile(lockFile, `${JSON.stringify({
+        acquiredAt: new Date().toISOString(),
+        leaseId: "another-lease",
+        pid: process.pid
+      })}\n`);
+
+      await release?.();
+      await expect(fs.readFile(lockFile, "utf8")).resolves.toContain("another-lease");
+    } finally {
+      await fs.rm(tempRoot, { recursive: true, force: true });
+    }
   });
 });

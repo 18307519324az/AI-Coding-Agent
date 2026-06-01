@@ -74,7 +74,7 @@ In live PR mode, the PR approval gate also publishes the prepared branch through
 
 The runner starts a workspace cleanup worker unless `RUNNER_WORKSPACE_CLEANUP=disabled`. Cleanup only removes task-scoped directories under `WORKSPACE_ROOT` for terminal tasks older than `RUNNER_WORKSPACE_RETENTION_HOURS`; active and recently updated tasks are retained.
 
-The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, trace events, logs, diffs, tests, E2E artifact metadata, repositories, and runner jobs. Playwright report and screenshot files are copied under `RUNNER_ARTIFACT_DIR` or `.runner-data/artifacts`. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
+The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, trace events, logs, diffs, tests, E2E artifact metadata, repositories, and runner jobs. In queued mode, same-host runner processes use `RUNNER_JOB_WORKER_LOCK_FILE` as a shared worker lease so only one process drains the queue at a time. Playwright report and screenshot files are copied under `RUNNER_ARTIFACT_DIR` or `.runner-data/artifacts`. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
 
 ### Agent Core
 

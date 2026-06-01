@@ -31,7 +31,7 @@ Status legend:
 | PRD item | Status | Current evidence |
 | --- | --- | --- |
 | Web console works normally | Done | Dashboard, repositories, jobs, task creation, task detail, settings, and login are implemented and E2E-covered. |
-| Runner can execute tasks stably | Partial | Inline and queued runner modes, retry/backoff, workspace cleanup, persistence, and metrics are implemented; multi-process queue locking remains future work. |
+| Runner can execute tasks stably | Done | Inline and queued runner modes, retry/backoff, single-host worker file leasing, workspace cleanup, persistence, and metrics are implemented and tested. |
 | Supports GitHub Issue to PR | Unverified | Issue intake and live PR code exist; full real issue-to-live-PR run is not yet proven against a real test repo. |
 | Supports human approval | Done | Plan and PR approvals are first-class API/store/UI concepts. |
 | Supports tests and E2E verification | Done | Unit verification and E2E artifact capture are implemented; Playwright E2E passes in CI. |
@@ -49,4 +49,4 @@ Status legend:
 1. Run `pnpm smoke:live-pr` against a disposable GitHub test repository using repository-scoped credentials, then record the PR URL in release notes or a verification artifact.
 2. Perform a manual UI review for the de-AI checklist after the final feature set is frozen.
 3. Decide whether v1 requires Prisma/PostgreSQL runtime repositories or whether the current JSON/SQLite snapshot store is acceptable for the first release.
-4. If API and worker processes are split, add a multi-process queue claim/lease mechanism before scaling beyond one runner process.
+4. Use the shared worker lock path for same-host multi-process deployments; use a database or queue backend before distributing workers across multiple hosts.
