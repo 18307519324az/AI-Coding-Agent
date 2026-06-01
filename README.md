@@ -56,6 +56,9 @@ DATABASE_URL=file:./.runner-data/dev.db
 RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
 RUNNER_JOB_MODE=inline # set to queued to enqueue plan generation jobs
 RUNNER_JOB_WORKER_INTERVAL_MS=1000
+RUNNER_WORKSPACE_RETENTION_HOURS=168
+RUNNER_WORKSPACE_CLEANUP_INTERVAL_MS=3600000
+RUNNER_WORKSPACE_CLEANUP=enabled # set to disabled to stop background cleanup
 GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
@@ -78,6 +81,7 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 - Runner API routes require `Authorization: Bearer <RUNNER_API_KEY>` when `RUNNER_API_KEY` is configured; `/health` stays public for probes.
 - GitHub write operations must be approved before execution.
 - Tasks use isolated workspace directories under `.workspaces/`.
+- Terminal task workspaces are retained for `RUNNER_WORKSPACE_RETENTION_HOURS` and then removed by the cleanup worker.
 
 ## MVP Flow
 
@@ -92,3 +96,5 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `OPENAI_AGENT_MODE=live` to generate task plans and bounded file edits through the OpenAI Responses API, and set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, apply approved implementation output, and run allowlisted verification commands after plan approval.
 
 In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and the runner entrypoint starts a non-overlapping worker that processes the next queued job on `RUNNER_JOB_WORKER_INTERVAL_MS`. `POST /api/jobs/process-next` remains available for operational retries and local debugging.
+
+The runner also starts a workspace cleanup worker by default. It removes only terminal task directories under `WORKSPACE_ROOT` after the retention window, and `POST /api/workspaces/cleanup` can trigger the same cleanup pass manually.

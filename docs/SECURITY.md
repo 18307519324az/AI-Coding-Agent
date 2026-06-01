@@ -83,6 +83,8 @@ Each task should use:
     repo/
 ```
 
+The cleanup worker removes only terminal task directories under `WORKSPACE_ROOT` after the configured retention window. Task IDs are validated before path construction, and cleanup rejects paths that escape the workspace root.
+
 Future hardening should add:
 
 - Per-task filesystem sandboxing.
@@ -90,7 +92,6 @@ Future hardening should add:
 - Timeouts for every command.
 - Environment variable allowlist.
 - Network policy controls for runner jobs.
-- Cleanup retention policy.
 
 ## Prompt Injection
 

@@ -29,6 +29,8 @@ import {
   type RepositoryCloner
 } from "./mock-flow";
 import { appendLog, createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
+import { getWorkspaceRoot } from "./workspace";
+import { cleanupTaskWorkspaces, type WorkspaceCleanupOptions } from "./workspace-cleanup";
 
 const ParamsSchema = z.object({
   taskId: z.string()
@@ -42,6 +44,8 @@ export type ServerOptions = {
   issueFetcher?: IssueFetcher;
   apiKey?: string;
   jobMode?: "inline" | "queued";
+  workspaceRoot?: string;
+  workspaceRetentionMs?: number;
   workspaceExecution?: boolean;
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
@@ -72,6 +76,13 @@ export function createRunnerJobProcessorOptions(options: ServerOptions): RunnerJ
     repositoryCloner: options.repositoryCloner,
     projectAnalyzer: options.projectAnalyzer,
     planGenerator: options.planGenerator
+  };
+}
+
+export function createWorkspaceCleanupOptions(options: ServerOptions): WorkspaceCleanupOptions {
+  return {
+    workspaceRoot: options.workspaceRoot ?? getWorkspaceRoot(),
+    retentionMs: options.workspaceRetentionMs ?? 7 * 24 * 60 * 60 * 1000
   };
 }
 
@@ -169,6 +180,8 @@ export function createServer(store: RunnerStore = createStore(), options: Server
   app.get("/api/jobs", async () => ({
     jobs: listJobs(store)
   }));
+
+  app.post("/api/workspaces/cleanup", async () => cleanupTaskWorkspaces(store, createWorkspaceCleanupOptions(options)));
 
   app.post("/api/jobs/process-next", async (request, reply) => {
     const job = await processNextRunnerJob(store, createRunnerJobProcessorOptions(options));

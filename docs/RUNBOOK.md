@@ -100,6 +100,23 @@ Actions:
 - If jobs stay `QUEUED`, confirm the worker process is running, then call `/api/jobs/process-next` to process one job manually.
 - If a job is `FAILED`, inspect its `error` and the related task logs before retrying manually.
 
+## Workspace Cleanup
+
+The runner starts workspace cleanup by default. It removes only terminal task directories older than `RUNNER_WORKSPACE_RETENTION_HOURS`.
+
+Checks:
+
+```bash
+curl -X POST -H "Authorization: Bearer $RUNNER_API_KEY" http://localhost:8787/api/workspaces/cleanup
+```
+
+Actions:
+
+- Confirm `WORKSPACE_ROOT` points to a dedicated workspace volume.
+- Set `RUNNER_WORKSPACE_CLEANUP=disabled` before manual filesystem investigations.
+- Increase `RUNNER_WORKSPACE_RETENTION_HOURS` when debugging failed tasks requires longer local retention.
+- Review the cleanup response `removed`, `skipped`, and `errors` arrays before deleting anything manually.
+
 ## Tests Failed
 
 Actions:

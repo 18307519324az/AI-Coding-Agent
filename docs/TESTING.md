@@ -49,6 +49,7 @@ Covered in `apps/runner/test`:
 - Model-generated implementation file application.
 - Git branch publishing guardrails.
 - Store persistence, including SQLite snapshot storage.
+- Workspace cleanup retention, terminal-state filtering, and non-overlap behavior.
 - Log redaction expectations.
 
 Next runner tests should cover:

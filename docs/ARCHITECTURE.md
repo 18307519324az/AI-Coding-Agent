@@ -51,6 +51,7 @@ The runner exposes:
 - `POST /api/tasks/:taskId/create-pr`
 - `GET /api/jobs`
 - `POST /api/jobs/process-next`
+- `POST /api/workspaces/cleanup`
 
 The runner can operate in two execution modes:
 
@@ -63,6 +64,8 @@ The runner can also operate in two task planning modes:
 - `queued`: `POST /api/tasks` creates the task, enqueues a `PLAN_TASK` job, and returns `202`; the runner entrypoint starts a single-process worker that polls the queue without overlapping processors, while `/api/jobs/process-next` remains available for manual processing.
 
 In live PR mode, the PR approval gate also publishes the prepared branch through the same command policy: `git checkout -b`, `git add .`, bounded `git commit -m`, and approval-backed `git push`. The runner creates the GitHub draft PR only after that branch publish step succeeds.
+
+The runner starts a workspace cleanup worker unless `RUNNER_WORKSPACE_CLEANUP=disabled`. Cleanup only removes task-scoped directories under `WORKSPACE_ROOT` for terminal tasks older than `RUNNER_WORKSPACE_RETENTION_HOURS`; active and recently updated tasks are retained.
 
 The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, logs, diffs, tests, repositories, and runner jobs. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
 
@@ -125,4 +128,3 @@ This keeps the product auditable and prevents prompt text from becoming executio
 
 - Replace in-memory store with SQLite Prisma repositories.
 - Add job retries, backoff, and configurable concurrency limits.
-- Add workspace cleanup jobs.

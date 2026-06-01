@@ -46,9 +46,14 @@ DATABASE_URL=file:./dev.db
 RUNNER_EXECUTION_MODE=workspace
 RUNNER_JOB_MODE=queued
 RUNNER_JOB_WORKER_INTERVAL_MS=1000
+RUNNER_WORKSPACE_RETENTION_HOURS=168
+RUNNER_WORKSPACE_CLEANUP_INTERVAL_MS=3600000
+RUNNER_WORKSPACE_CLEANUP=enabled
 ```
 
 When `RUNNER_JOB_MODE=queued`, the runner process starts the queue worker after the API is listening. Run one worker per SQLite-backed runner instance until concurrency controls are added.
+
+When workspace cleanup is enabled, terminal task directories under `WORKSPACE_ROOT` are removed after the retention window. Mount `WORKSPACE_ROOT` on a dedicated volume so cleanup cannot affect unrelated application files.
 
 ## Deployment Checklist
 
