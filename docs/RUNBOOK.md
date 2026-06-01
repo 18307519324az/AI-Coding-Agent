@@ -60,7 +60,7 @@ Actions:
 Use `RUNNER_JOB_MODE=queued` when task creation should return quickly and plan generation should be processed out of band.
 
 ```bash
-RUNNER_JOB_MODE=queued pnpm --filter runner dev
+RUNNER_JOB_MODE=queued RUNNER_JOB_WORKER_INTERVAL_MS=1000 pnpm --filter runner dev
 ```
 
 Checks:
@@ -74,7 +74,8 @@ Actions:
 
 - Confirm `POST /api/tasks` returns `202` with a `jobId`.
 - Confirm task details include a `jobs` array with `PLAN_TASK`.
-- If jobs stay `QUEUED`, call `/api/jobs/process-next` or check the future worker process.
+- Confirm runner logs show `Runner job worker started`.
+- If jobs stay `QUEUED`, confirm the worker process is running, then call `/api/jobs/process-next` to process one job manually.
 - If a job is `FAILED`, inspect its `error` and the related task logs before retrying manually.
 
 ## Tests Failed

@@ -54,6 +54,7 @@ RUNNER_SQLITE_FILE=.runner-data/store.db
 DATABASE_URL=file:./.runner-data/dev.db
 RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
 RUNNER_JOB_MODE=inline # set to queued to enqueue plan generation jobs
+RUNNER_JOB_WORKER_INTERVAL_MS=1000
 GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
@@ -80,4 +81,4 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 
 The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `OPENAI_AGENT_MODE=live` to generate task plans and bounded file edits through the OpenAI Responses API, and set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, apply approved implementation output, and run allowlisted verification commands after plan approval.
 
-In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and `POST /api/jobs/process-next` processes the next queued job. This keeps the MVP queue explicit while leaving a long-running worker process as a deploy-time extension.
+In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and the runner entrypoint starts a non-overlapping worker that processes the next queued job on `RUNNER_JOB_WORKER_INTERVAL_MS`. `POST /api/jobs/process-next` remains available for operational retries and local debugging.

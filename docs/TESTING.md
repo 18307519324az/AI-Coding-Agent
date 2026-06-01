@@ -41,6 +41,7 @@ Covered in `apps/runner/test`:
 - Create task flow.
 - Plan approval waiting state.
 - Queued plan generation and job failure recording.
+- Background job worker interval, stop, error, and non-overlap behavior.
 - GitHub issue URL task intake.
 - Workspace project analysis.
 - OpenAI model adapter response validation.
@@ -52,7 +53,7 @@ Covered in `apps/runner/test`:
 Next runner tests should cover:
 
 - Command executor refuses commands outside policy.
-- Background worker retry and concurrency behavior once the worker is added.
+- Job retry and backoff behavior once retries are added.
 
 ## E2E Tests
 

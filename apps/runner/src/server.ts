@@ -5,12 +5,13 @@ import {
   CreateTaskRequestSchema,
   RejectApprovalRequestSchema
 } from "@ai-coding-agent/shared";
-import type { Approval, ResolvedCreateTaskRequest, RunnerJob } from "@ai-coding-agent/shared";
+import type { Approval } from "@ai-coding-agent/shared";
 import Fastify from "fastify";
 import { z } from "zod";
 import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
-import { enqueueJob, listJobs, processNextJob } from "./job-queue";
+import { processNextRunnerJob, type RunnerJobProcessorOptions } from "./job-processor";
+import { enqueueJob, listJobs } from "./job-queue";
 import { createRunLog } from "./log";
 import { resolveCreateTaskRequest, type IssueFetcher } from "./issue-service";
 import {
@@ -18,7 +19,6 @@ import {
   approvePrFlow,
   createTaskRecord,
   createTaskFlow,
-  generateTaskPlanFlow,
   type BranchPublisher,
   type CommandRunner,
   type ImplementationGenerator,
@@ -50,7 +50,7 @@ export type ServerOptions = {
   pullRequestCreator?: PullRequestCreator;
 };
 
-function shouldUseWorkspaceExecution(options: ServerOptions): boolean {
+export function shouldUseWorkspaceExecution(options: ServerOptions): boolean {
   return options.workspaceExecution ??
     Boolean(
       options.repositoryCloner ||
@@ -60,28 +60,16 @@ function shouldUseWorkspaceExecution(options: ServerOptions): boolean {
     );
 }
 
-function shouldUseQueuedJobs(options: ServerOptions): boolean {
+export function shouldUseQueuedJobs(options: ServerOptions): boolean {
   return options.jobMode === "queued" || process.env.RUNNER_JOB_MODE === "queued";
 }
 
-function parseQueuedPlanJob(job: RunnerJob): {
-  taskId: string;
-  request: ResolvedCreateTaskRequest;
-} {
-  const taskId = job.payload.taskId;
-  const request = job.payload.request;
-  if (typeof taskId !== "string") {
-    throw new Error("Queued plan job is missing taskId.");
-  }
-
-  const parsed = CreateTaskRequestSchema.safeParse(request);
-  if (!parsed.success || !parsed.data.title || !parsed.data.prompt) {
-    throw new Error("Queued plan job payload is invalid.");
-  }
-
+export function createRunnerJobProcessorOptions(options: ServerOptions): RunnerJobProcessorOptions {
   return {
-    taskId,
-    request: parsed.data as ResolvedCreateTaskRequest
+    workspaceExecution: shouldUseWorkspaceExecution(options),
+    repositoryCloner: options.repositoryCloner,
+    projectAnalyzer: options.projectAnalyzer,
+    planGenerator: options.planGenerator
   };
 }
 
@@ -149,25 +137,7 @@ export function createServer(store: RunnerStore = createStore(), options: Server
   }));
 
   app.post("/api/jobs/process-next", async (request, reply) => {
-    const workspaceExecution = shouldUseWorkspaceExecution(options);
-    const job = await processNextJob(store, async (queuedJob) => {
-      if (queuedJob.type !== "PLAN_TASK") {
-        throw new Error(`Unsupported job type: ${queuedJob.type}`);
-      }
-
-      const { taskId, request: queuedRequest } = parseQueuedPlanJob(queuedJob);
-      const task = store.tasks.get(taskId);
-      if (!task) {
-        throw new Error(`Task not found for job ${queuedJob.id}.`);
-      }
-
-      await generateTaskPlanFlow(store, task, queuedRequest, {
-        workspaceExecution,
-        repositoryCloner: options.repositoryCloner,
-        projectAnalyzer: options.projectAnalyzer,
-        planGenerator: options.planGenerator
-      });
-    });
+    const job = await processNextRunnerJob(store, createRunnerJobProcessorOptions(options));
 
     if (!job) {
       return reply.status(204).send();
