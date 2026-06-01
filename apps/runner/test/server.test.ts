@@ -26,6 +26,47 @@ function createWorkspaceContext(rootPath: string): ProjectContext {
 }
 
 describe("runner API", () => {
+  it("keeps health public when API key auth is enabled", async () => {
+    const app = createServer(undefined, {
+      apiKey: "runner-secret"
+    });
+    const response = await app.inject({
+      method: "GET",
+      url: "/health"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true
+    });
+  });
+
+  it("requires a bearer token when API key auth is enabled", async () => {
+    const app = createServer(undefined, {
+      apiKey: "runner-secret"
+    });
+    const rejected = await app.inject({
+      method: "GET",
+      url: "/api/tasks"
+    });
+    const accepted = await app.inject({
+      method: "GET",
+      url: "/api/tasks",
+      headers: {
+        authorization: "Bearer runner-secret"
+      }
+    });
+
+    expect(rejected.statusCode).toBe(401);
+    expect(rejected.json()).toMatchObject({
+      error: "Unauthorized."
+    });
+    expect(accepted.statusCode).toBe(200);
+    expect(accepted.json()).toMatchObject({
+      tasks: []
+    });
+  });
+
   it("connects a GitHub repository", async () => {
     const app = createServer();
     const response = await app.inject({

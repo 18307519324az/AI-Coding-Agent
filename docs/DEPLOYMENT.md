@@ -18,8 +18,11 @@ Supported targets:
 Required environment:
 
 ```bash
-NEXT_PUBLIC_RUNNER_API_URL=https://runner.example.com
+RUNNER_API_URL=https://runner.example.com
+RUNNER_API_KEY=...
 ```
+
+Use `NEXT_PUBLIC_RUNNER_API_URL` only for unprotected local compatibility. Production Web builds should keep runner credentials server-side and use the built-in `/api/runner/*` proxy for browser-originating writes.
 
 ## Runner
 
@@ -38,6 +41,7 @@ RUNNER_HOST=0.0.0.0
 WORKSPACE_ROOT=.workspaces
 GITHUB_TOKEN=...
 OPENAI_API_KEY=...
+RUNNER_API_KEY=...
 DATABASE_URL=file:./dev.db
 RUNNER_EXECUTION_MODE=workspace
 RUNNER_JOB_MODE=queued
@@ -52,6 +56,7 @@ When `RUNNER_JOB_MODE=queued`, the runner process starts the queue worker after 
 - `.env` files are not committed.
 - Runner logs redact tokens.
 - GitHub token is repository-scoped.
+- Runner API key matches the Web service secret.
 - Workspace cleanup policy is enabled.
 - CI passes before deploy.
 - PR creation remains approval-gated.

@@ -7,6 +7,7 @@ import {
 } from "@ai-coding-agent/shared";
 import type { Approval } from "@ai-coding-agent/shared";
 import Fastify from "fastify";
+import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
@@ -39,6 +40,7 @@ const ApprovalParamsSchema = ParamsSchema.extend({
 
 export type ServerOptions = {
   issueFetcher?: IssueFetcher;
+  apiKey?: string;
   jobMode?: "inline" | "queued";
   workspaceExecution?: boolean;
   repositoryCloner?: RepositoryCloner;
@@ -73,6 +75,25 @@ export function createRunnerJobProcessorOptions(options: ServerOptions): RunnerJ
   };
 }
 
+function getRunnerApiKey(options: ServerOptions): string | undefined {
+  return options.apiKey ?? process.env.RUNNER_API_KEY;
+}
+
+function getBearerToken(value: string | undefined): string | undefined {
+  const prefix = "Bearer ";
+  return value?.startsWith(prefix) ? value.slice(prefix.length) : undefined;
+}
+
+function isMatchingSecret(actual: string | undefined, expected: string): boolean {
+  if (!actual) {
+    return false;
+  }
+
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
+}
+
 export function createServer(store: RunnerStore = createStore(), options: ServerOptions = {}) {
   const app = Fastify({
     logger: {
@@ -83,6 +104,19 @@ export function createServer(store: RunnerStore = createStore(), options: Server
 
   app.register(cors, {
     origin: true
+  });
+
+  app.addHook("onRequest", async (request, reply) => {
+    const apiKey = getRunnerApiKey(options);
+    const path = request.url.split("?")[0];
+    if (!apiKey || path === "/health" || request.method === "OPTIONS") {
+      return;
+    }
+
+    const token = getBearerToken(request.headers.authorization);
+    if (!isMatchingSecret(token, apiKey)) {
+      return reply.status(401).send({ error: "Unauthorized." });
+    }
   });
 
   app.get("/health", async () => ({

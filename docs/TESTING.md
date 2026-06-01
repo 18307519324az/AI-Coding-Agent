@@ -38,6 +38,7 @@ Covered in `packages/agent-core/test`:
 
 Covered in `apps/runner/test`:
 
+- API key protection for Runner API routes while keeping `/health` public.
 - Create task flow.
 - Plan approval waiting state.
 - Queued plan generation and job failure recording.
@@ -60,8 +61,9 @@ Next runner tests should cover:
 Covered in `apps/web/tests` with Playwright:
 
 - Dashboard task queue and approval state.
-- Create Task page loading, error, disabled, and success states.
+- Create Task page loading, error, disabled, and success states through the server-side Runner proxy.
 - Task detail plan, diff, logs, tests, and approval controls.
+- Repository form save flow against a Runner started with API key auth in test setup.
 
 ## Agent Eval
 

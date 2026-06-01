@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-const runnerBaseUrl = process.env.NEXT_PUBLIC_RUNNER_API_URL ?? "http://127.0.0.1:8787";
-
 export function CreateTaskForm() {
   const [submitting, setSubmitting] = useState(false);
   const [createdTaskId, setCreatedTaskId] = useState("");
@@ -20,7 +18,7 @@ export function CreateTaskForm() {
 
         const form = new FormData(event.currentTarget);
         try {
-          const response = await fetch(`${runnerBaseUrl}/api/tasks`, {
+          const response = await fetch("/api/runner/tasks", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"

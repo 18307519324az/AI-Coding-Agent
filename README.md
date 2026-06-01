@@ -46,6 +46,7 @@ Runner variables:
 ```bash
 GITHUB_TOKEN=...
 OPENAI_API_KEY=...
+RUNNER_API_KEY=...
 OPENAI_AGENT_MODE=deterministic # set to live to generate plans through OpenAI Responses API
 OPENAI_MODEL=gpt-5.2
 WORKSPACE_ROOT=.workspaces
@@ -59,6 +60,14 @@ GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
 
+Web variables:
+
+```bash
+RUNNER_API_URL=http://127.0.0.1:8787
+RUNNER_API_KEY=... # same value as the runner when API auth is enabled
+NEXT_PUBLIC_RUNNER_API_URL=http://127.0.0.1:8787 # optional for unprotected local compatibility
+```
+
 ## Safety Model
 
 The runner treats shell execution as a policy decision, not a free-form chat action.
@@ -66,6 +75,7 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 - Read-only commands are allowed without approval.
 - Dependency install, push, PR creation, workflow trigger, and destructive operations require explicit approval or are blocked.
 - Logs are redacted before storage.
+- Runner API routes require `Authorization: Bearer <RUNNER_API_KEY>` when `RUNNER_API_KEY` is configured; `/health` stays public for probes.
 - GitHub write operations must be approved before execution.
 - Tasks use isolated workspace directories under `.workspaces/`.
 

@@ -9,6 +9,7 @@ Never commit secrets. Use environment variables for:
 - `GITHUB_TOKEN`
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
 - `OPENAI_API_KEY`
+- `RUNNER_API_KEY`
 - `DATABASE_URL`
 
 Forbidden:
@@ -26,6 +27,12 @@ Required:
 - Review the full diff before PR creation.
 - Send only bounded planning and implementation context to OpenAI.
 - Reject model-requested edits outside the task workspace, `.git`, or `.env` files.
+
+## API Boundary
+
+Set `RUNNER_API_KEY` before exposing the runner outside a trusted local network. When configured, every Runner API route except `/health` requires `Authorization: Bearer <RUNNER_API_KEY>`. The Web app should keep this value in a server-side environment variable and call the runner through server components or `/api/runner/*` proxy routes, not from browser code.
+
+Do not put Runner credentials in `NEXT_PUBLIC_*` variables.
 
 ## Command Execution
 

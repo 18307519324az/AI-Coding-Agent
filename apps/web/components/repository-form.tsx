@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-const runnerBaseUrl = process.env.NEXT_PUBLIC_RUNNER_API_URL ?? "http://127.0.0.1:8787";
-
 export function RepositoryForm() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -20,7 +18,7 @@ export function RepositoryForm() {
 
         const form = new FormData(event.currentTarget);
         try {
-          const response = await fetch(`${runnerBaseUrl}/api/repositories`, {
+          const response = await fetch("/api/runner/repositories", {
             method: "POST",
             headers: {
               "Content-Type": "application/json"

@@ -1,9 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const runnerApiUrl = "http://127.0.0.1:8787";
-
 async function delayRunnerPost(page: Page, path: string): Promise<void> {
-  await page.route(`${runnerApiUrl}${path}`, async (route) => {
+  await page.route(path, async (route) => {
     if (route.request().method() === "POST") {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
@@ -21,7 +19,7 @@ test("dashboard shows task queue and approval state", async ({ page }) => {
 });
 
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {
-  await delayRunnerPost(page, "/api/tasks");
+  await delayRunnerPost(page, "**/api/runner/tasks");
   await page.goto("/tasks/new");
 
   await expect(page.getByLabel("Repository URL")).toBeVisible();
@@ -49,7 +47,7 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
 });
 
 test("repository form saves through the runner", async ({ page }) => {
-  await delayRunnerPost(page, "/api/repositories");
+  await delayRunnerPost(page, "**/api/runner/repositories");
   await page.goto("/repositories/new");
 
   await page.getByLabel("GitHub repository URL").fill("https://github.com/acme/agent-fixture");

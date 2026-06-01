@@ -19,8 +19,30 @@ Actions:
 
 - Confirm `RUNNER_PORT`.
 - Check process logs.
+- If `RUNNER_API_KEY` is enabled, confirm Web and Runner have the same server-side value.
 - Confirm workspace directory is writable.
 - Confirm secrets are present only in environment variables.
+
+## Runner API Unauthorized
+
+Symptoms:
+
+- Web console falls back to mock data or shows runner errors.
+- Runner API returns `401 Unauthorized` for non-health routes.
+- `/health` still returns `200`.
+
+Checks:
+
+```bash
+curl http://localhost:8787/health
+curl -H "Authorization: Bearer $RUNNER_API_KEY" http://localhost:8787/api/tasks
+```
+
+Actions:
+
+- Confirm `RUNNER_API_KEY` is set on the Runner.
+- Confirm the same `RUNNER_API_KEY` is set on the Web service as a server-side secret.
+- Confirm browser code is calling `/api/runner/*` proxy routes instead of sending credentials directly to the Runner.
 
 ## Task Stuck Waiting for Plan Approval
 

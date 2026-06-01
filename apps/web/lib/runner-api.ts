@@ -16,9 +16,7 @@ import {
   tasks as mockTasks,
   testResults as mockTests
 } from "./mock-data";
-
-const runnerBaseUrl =
-  process.env.NEXT_PUBLIC_RUNNER_API_URL ?? process.env.RUNNER_API_URL ?? "http://127.0.0.1:8787";
+import { createRunnerHeaders, runnerBaseUrl } from "./runner-config";
 
 export type TaskDetail = AgentTask & {
   approvals: Approval[];
@@ -68,7 +66,8 @@ function hydrateTest(test: TestResult): TestResult {
 async function safeJson<T>(path: string): Promise<T | undefined> {
   try {
     const response = await fetch(`${runnerBaseUrl}${path}`, {
-      cache: "no-store"
+      cache: "no-store",
+      headers: createRunnerHeaders()
     });
     if (!response.ok) {
       return undefined;
@@ -128,4 +127,3 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefi
 export function getRunnerBaseUrl(): string {
   return runnerBaseUrl;
 }
-
