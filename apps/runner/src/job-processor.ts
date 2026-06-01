@@ -10,6 +10,7 @@ import type { RunnerStore } from "./store";
 
 export type RunnerJobProcessorOptions = {
   workspaceExecution?: boolean;
+  retryBackoffMs?: number;
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
   planGenerator?: PlanGenerator;
@@ -51,12 +52,16 @@ export async function processRunnerJob(
     throw new Error(`Task not found for job ${job.id}.`);
   }
 
-  await generateTaskPlanFlow(store, task, request, {
+  const plannedTask = await generateTaskPlanFlow(store, task, request, {
     workspaceExecution: options.workspaceExecution,
     repositoryCloner: options.repositoryCloner,
     projectAnalyzer: options.projectAnalyzer,
     planGenerator: options.planGenerator
   });
+
+  if (plannedTask.status.startsWith("FAILED")) {
+    throw new Error(`Task plan job ended with ${plannedTask.status}.`);
+  }
 }
 
 export async function processNextRunnerJob(
@@ -65,5 +70,7 @@ export async function processNextRunnerJob(
 ): Promise<RunnerJob | undefined> {
   return processNextJob(store, async (job) => {
     await processRunnerJob(store, job, options);
+  }, {
+    retryBackoffMs: options.retryBackoffMs
   });
 }

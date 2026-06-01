@@ -44,6 +44,8 @@ export type ServerOptions = {
   issueFetcher?: IssueFetcher;
   apiKey?: string;
   jobMode?: "inline" | "queued";
+  jobMaxAttempts?: number;
+  jobRetryBackoffMs?: number;
   workspaceRoot?: string;
   workspaceRetentionMs?: number;
   workspaceExecution?: boolean;
@@ -70,9 +72,23 @@ export function shouldUseQueuedJobs(options: ServerOptions): boolean {
   return options.jobMode === "queued" || process.env.RUNNER_JOB_MODE === "queued";
 }
 
+function parsePositiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+export function getRunnerJobMaxAttempts(options: ServerOptions): number {
+  return options.jobMaxAttempts ?? parsePositiveInteger(process.env.RUNNER_JOB_MAX_ATTEMPTS, 3);
+}
+
+export function getRunnerJobRetryBackoffMs(options: ServerOptions): number {
+  return options.jobRetryBackoffMs ?? parsePositiveInteger(process.env.RUNNER_JOB_RETRY_BACKOFF_MS, 1000);
+}
+
 export function createRunnerJobProcessorOptions(options: ServerOptions): RunnerJobProcessorOptions {
   return {
     workspaceExecution: shouldUseWorkspaceExecution(options),
+    retryBackoffMs: getRunnerJobRetryBackoffMs(options),
     repositoryCloner: options.repositoryCloner,
     projectAnalyzer: options.projectAnalyzer,
     planGenerator: options.planGenerator
@@ -149,6 +165,7 @@ export function createServer(store: RunnerStore = createStore(), options: Server
         const job = enqueueJob(store, {
           taskId: task.id,
           type: "PLAN_TASK",
+          maxAttempts: getRunnerJobMaxAttempts(options),
           payload: {
             taskId: task.id,
             request: resolvedRequest

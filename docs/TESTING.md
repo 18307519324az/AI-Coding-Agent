@@ -41,8 +41,8 @@ Covered in `apps/runner/test`:
 - API key protection for Runner API routes while keeping `/health` public.
 - Create task flow.
 - Plan approval waiting state.
-- Queued plan generation and job failure recording.
-- Background job worker interval, stop, error, and non-overlap behavior.
+- Queued plan generation, job retry/backoff, and terminal failure recording.
+- Background job worker interval, stop, error, non-overlap, and concurrency behavior.
 - GitHub issue URL task intake.
 - Workspace project analysis.
 - OpenAI model adapter response validation.
@@ -56,7 +56,7 @@ Covered in `apps/runner/test`:
 
 Next runner tests should cover:
 
-- Job retry and backoff behavior once retries are added.
+- Multi-process queue coordination if worker and API are split across deployments.
 
 ## E2E Tests
 

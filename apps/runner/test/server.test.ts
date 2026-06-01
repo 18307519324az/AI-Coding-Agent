@@ -138,11 +138,11 @@ describe("runner API", () => {
     const queuedTask = beforeProcessing.json<{
       status: string;
       plan?: unknown;
-      jobs: Array<{ status: string; type: string }>;
+      jobs: Array<{ maxAttempts: number; status: string; type: string }>;
     }>();
     expect(queuedTask).toMatchObject({
       status: "CREATED",
-      jobs: [expect.objectContaining({ status: "QUEUED", type: "PLAN_TASK" })]
+      jobs: [expect.objectContaining({ maxAttempts: 3, status: "QUEUED", type: "PLAN_TASK" })]
     });
     expect(queuedTask.plan).toBeUndefined();
 

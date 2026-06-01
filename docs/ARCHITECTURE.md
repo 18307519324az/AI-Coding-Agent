@@ -65,7 +65,7 @@ The runner can operate in two execution modes:
 The runner can also operate in two task planning modes:
 
 - `inline`: default mode where task creation immediately generates the plan.
-- `queued`: `POST /api/tasks` creates the task, enqueues a `PLAN_TASK` job, and returns `202`; the runner entrypoint starts a single-process worker that polls the queue without overlapping processors, while `/api/jobs/process-next` remains available for manual processing.
+- `queued`: `POST /api/tasks` creates the task, enqueues a `PLAN_TASK` job, and returns `202`; the runner entrypoint starts a worker that polls the queue without exceeding the configured concurrency, while `/api/jobs/process-next` remains available for manual processing. Failed jobs are retried with `nextRunAt` backoff until `maxAttempts` is exhausted.
 
 In live PR mode, the PR approval gate also publishes the prepared branch through the same command policy: `git checkout -b`, `git add .`, bounded `git commit -m`, and approval-backed `git push`. The runner creates the GitHub draft PR only after that branch publish step succeeds.
 
@@ -131,4 +131,4 @@ This keeps the product auditable and prevents prompt text from becoming executio
 ## Future Integration Points
 
 - Replace in-memory store with SQLite Prisma repositories.
-- Add job retries, backoff, and configurable concurrency limits.
+- Scale worker concurrency only after command execution isolation and workspace capacity have been reviewed.

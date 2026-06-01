@@ -44,6 +44,7 @@ model AgentTask {
   approvals    Approval[]
   testResults  TestResult[]
   e2eArtifacts E2eArtifact[]
+  jobs         RunnerJob[]
 }
 
 model AgentRunLog {
@@ -87,4 +88,20 @@ model E2eArtifact {
   screenshots Json
   createdAt   DateTime  @default(now())
   task        AgentTask @relation(fields: [taskId], references: [id])
+}
+
+model RunnerJob {
+  id          String     @id
+  taskId      String?
+  type        String
+  status      String
+  payload     Json
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(3)
+  nextRunAt   DateTime?
+  error       String?
+  createdAt   DateTime   @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  task        AgentTask? @relation(fields: [taskId], references: [id])
 }

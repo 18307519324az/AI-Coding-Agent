@@ -27,6 +27,9 @@ const storeFile = process.env.RUNNER_STORE_FILE ?? path.resolve(process.cwd(), "
 const sqliteStoreFile = process.env.RUNNER_SQLITE_FILE ??
   (process.env.DATABASE_URL?.startsWith("file:") ? process.env.DATABASE_URL.slice("file:".length) : undefined);
 const jobWorkerIntervalMs = parsePositiveInteger(process.env.RUNNER_JOB_WORKER_INTERVAL_MS, 1000);
+const jobWorkerConcurrency = parsePositiveInteger(process.env.RUNNER_JOB_WORKER_CONCURRENCY, 1);
+const jobMaxAttempts = parsePositiveInteger(process.env.RUNNER_JOB_MAX_ATTEMPTS, 3);
+const jobRetryBackoffMs = parsePositiveInteger(process.env.RUNNER_JOB_RETRY_BACKOFF_MS, 1000);
 const workspaceRetentionMs = parsePositiveHours(process.env.RUNNER_WORKSPACE_RETENTION_HOURS, 168) * 60 * 60 * 1000;
 const workspaceCleanupIntervalMs = parsePositiveInteger(process.env.RUNNER_WORKSPACE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
 const useWorkspaceCleanup = process.env.RUNNER_WORKSPACE_CLEANUP !== "disabled";
@@ -35,11 +38,14 @@ const store = sqliteStoreFile
   ? createSqliteBackedStore(path.resolve(process.cwd(), sqliteStoreFile))
   : createFileBackedStore(storeFile);
 const serverOptions: ServerOptions = {
+  jobMaxAttempts,
+  jobRetryBackoffMs,
   workspaceRetentionMs
 };
 const app = createServer(store, serverOptions);
 const jobWorker = shouldUseQueuedJobs(serverOptions)
   ? createJobWorker({
+      concurrency: jobWorkerConcurrency,
       intervalMs: jobWorkerIntervalMs,
       processNext: () => processNextRunnerJob(store, createRunnerJobProcessorOptions(serverOptions)),
       onError: (error) => app.log.error({ err: error }, "Runner job worker failed.")
@@ -63,7 +69,7 @@ try {
   await app.listen({ port, host });
   if (jobWorker) {
     jobWorker.start();
-    app.log.info({ intervalMs: jobWorkerIntervalMs }, "Runner job worker started.");
+    app.log.info({ concurrency: jobWorkerConcurrency, intervalMs: jobWorkerIntervalMs }, "Runner job worker started.");
   }
   if (workspaceCleanupWorker) {
     workspaceCleanupWorker.start();

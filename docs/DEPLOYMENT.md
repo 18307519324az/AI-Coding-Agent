@@ -50,12 +50,15 @@ DATABASE_URL=file:./dev.db
 RUNNER_EXECUTION_MODE=workspace
 RUNNER_JOB_MODE=queued
 RUNNER_JOB_WORKER_INTERVAL_MS=1000
+RUNNER_JOB_WORKER_CONCURRENCY=1
+RUNNER_JOB_MAX_ATTEMPTS=3
+RUNNER_JOB_RETRY_BACKOFF_MS=1000
 RUNNER_WORKSPACE_RETENTION_HOURS=168
 RUNNER_WORKSPACE_CLEANUP_INTERVAL_MS=3600000
 RUNNER_WORKSPACE_CLEANUP=enabled
 ```
 
-When `RUNNER_JOB_MODE=queued`, the runner process starts the queue worker after the API is listening. Run one worker per SQLite-backed runner instance until concurrency controls are added.
+When `RUNNER_JOB_MODE=queued`, the runner process starts the queue worker after the API is listening. Keep `RUNNER_JOB_WORKER_CONCURRENCY=1` unless the host has enough isolated workspace capacity for parallel command execution. Failed jobs retry until `RUNNER_JOB_MAX_ATTEMPTS` is exhausted, with `RUNNER_JOB_RETRY_BACKOFF_MS` as the base delay.
 
 When workspace cleanup is enabled, terminal task directories under `WORKSPACE_ROOT` are removed after the retention window. Mount `WORKSPACE_ROOT` on a dedicated volume so cleanup cannot affect unrelated application files.
 
@@ -67,6 +70,7 @@ When workspace cleanup is enabled, terminal task directories under `WORKSPACE_RO
 - GitHub token is repository-scoped.
 - Runner API key matches the Web service secret.
 - Web auth password and session secret are configured for the console.
+- Job worker concurrency and retry limits match runner host capacity.
 - Workspace cleanup policy is enabled.
 - CI passes before deploy.
 - PR creation remains approval-gated.

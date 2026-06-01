@@ -8,6 +8,8 @@ function createJob(id: string): RunnerJob {
     type: "PLAN_TASK",
     status: "COMPLETED",
     payload: {},
+    attempts: 1,
+    maxAttempts: 3,
     createdAt: new Date(),
     startedAt: new Date(),
     completedAt: new Date()
@@ -39,6 +41,28 @@ describe("job worker", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("processes up to the configured concurrency", async () => {
+    const releases: Array<(job: RunnerJob) => void> = [];
+    const processNext = vi.fn(
+      () => new Promise<RunnerJob>((resolve) => {
+        releases.push(resolve);
+      })
+    );
+    const worker = createJobWorker({
+      concurrency: 2,
+      processNext
+    });
+
+    const processing = worker.processOnce();
+    expect(processNext).toHaveBeenCalledTimes(2);
+
+    releases[0]?.(createJob("job_a"));
+    releases[1]?.(createJob("job_b"));
+    await expect(processing).resolves.toMatchObject({
+      id: "job_a"
+    });
   });
 
   it("does not start overlapping processors", async () => {
