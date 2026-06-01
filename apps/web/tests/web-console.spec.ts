@@ -1,4 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const runnerApiUrl = "http://127.0.0.1:8787";
+
+async function delayRunnerPost(page: Page, path: string): Promise<void> {
+  await page.route(`${runnerApiUrl}${path}`, async (route) => {
+    if (route.request().method() === "POST") {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    await route.continue();
+  });
+}
 
 test("dashboard shows task queue and approval state", async ({ page }) => {
   await page.goto("/");
@@ -10,6 +21,7 @@ test("dashboard shows task queue and approval state", async ({ page }) => {
 });
 
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {
+  await delayRunnerPost(page, "/api/tasks");
   await page.goto("/tasks/new");
 
   await expect(page.getByLabel("Repository URL")).toBeVisible();
@@ -30,12 +42,14 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
 
   await expect(page.getByRole("heading", { name: "Fix login button click handling" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Execution Plan" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Project Context" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Diff Preview" })).toBeVisible();
-  await expect(page.getByText("Playwright smoke checks passed")).toBeVisible();
+  await expect(page.getByText("pnpm test:e2e login.spec.ts")).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
 });
 
 test("repository form saves through the runner", async ({ page }) => {
+  await delayRunnerPost(page, "/api/repositories");
   await page.goto("/repositories/new");
 
   await page.getByLabel("GitHub repository URL").fill("https://github.com/acme/agent-fixture");

@@ -10,6 +10,7 @@ import type {
   Approval,
   CreateTaskRequest,
   DiffSummary,
+  ProjectContext,
   Repository,
   TestResult
 } from "@ai-coding-agent/shared";
@@ -25,6 +26,94 @@ function setStatus(task: AgentTask, status: AgentTask["status"]): AgentTask {
     updatedAt: new Date()
   };
   return next;
+}
+
+function createInferredProjectContext(input: {
+  taskId: string;
+  request: CreateTaskRequest;
+  repository: Repository;
+}): ProjectContext {
+  const text = `${input.request.title} ${input.request.prompt} ${input.repository.name}`.toLowerCase();
+  const hasFrontend = /\b(ui|frontend|front-end|page|dashboard|console|react|next|vite|playwright|button|form)\b/.test(text);
+  const projectKind: ProjectContext["projectKind"] = hasFrontend ? "next" : "node";
+  const e2e = input.request.testCommandOverride?.includes("e2e")
+    ? input.request.testCommandOverride
+    : hasFrontend
+      ? "pnpm test:e2e"
+      : undefined;
+
+  return {
+    rootPath: `.workspaces/${input.taskId}/repo`,
+    packageManager: "pnpm",
+    projectKind,
+    hasFrontend,
+    scripts: {
+      lint: "eslint .",
+      typecheck: "tsc --noEmit",
+      test: "vitest run",
+      ...(e2e ? { "test:e2e": "playwright test" } : {})
+    },
+    recommendedCommands: {
+      install: input.request.allowDependencyInstall ? "pnpm install" : undefined,
+      lint: "pnpm lint",
+      typecheck: "pnpm typecheck",
+      test: input.request.testCommandOverride && !input.request.testCommandOverride.includes("e2e")
+        ? input.request.testCommandOverride
+        : "pnpm test",
+      e2e
+    },
+    relevantFiles: hasFrontend
+      ? ["package.json", "app/**/*", "components/**/*", "tests/**/*.spec.ts", "playwright.config.ts"]
+      : ["package.json", "src/**/*", "test/**/*.test.ts", "tsconfig.json"]
+  };
+}
+
+function createTestResult(input: {
+  taskId: string;
+  command: string;
+  output: string;
+  durationMs: number;
+}): TestResult {
+  return {
+    id: createId("test"),
+    taskId: input.taskId,
+    command: input.command,
+    status: "PASSED",
+    output: input.output,
+    durationMs: input.durationMs,
+    createdAt: new Date()
+  };
+}
+
+function createVerificationResults(task: AgentTask): {
+  unit: TestResult[];
+  e2e?: TestResult;
+} {
+  const commands = task.projectContext?.recommendedCommands;
+  const unitCommands = [commands?.lint, commands?.typecheck, commands?.test].filter(
+    (command): command is string => Boolean(command)
+  );
+
+  const unit = unitCommands.map((command, index) =>
+    createTestResult({
+      taskId: task.id,
+      command,
+      output: `${command} completed successfully under the runner command policy.`,
+      durationMs: 1200 + index * 450
+    })
+  );
+
+  return {
+    unit,
+    e2e: commands?.e2e
+      ? createTestResult({
+          taskId: task.id,
+          command: commands.e2e,
+          output: "Playwright verification completed successfully.",
+          durationMs: 3100
+        })
+      : undefined
+  };
 }
 
 export function createTaskFlow(store: RunnerStore, request: CreateTaskRequest): AgentTask {
@@ -62,11 +151,24 @@ export function createTaskFlow(store: RunnerStore, request: CreateTaskRequest): 
   }));
 
   task = setStatus(task, "CONTEXT_ANALYZING");
+  const projectContext = createInferredProjectContext({
+    taskId: task.id,
+    request,
+    repository
+  });
+  task = {
+    ...task,
+    projectContext
+  };
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
     phase: "CONTEXT_ANALYZING",
-    message: "Repository metadata queued for analysis."
+    message: `Project context analyzed: ${projectContext.projectKind} project using ${projectContext.packageManager}.`,
+    metadata: {
+      recommendedCommands: projectContext.recommendedCommands,
+      relevantFiles: projectContext.relevantFiles
+    }
   }));
 
   task = setStatus(task, "PLAN_GENERATED");
@@ -74,7 +176,8 @@ export function createTaskFlow(store: RunnerStore, request: CreateTaskRequest): 
     title: task.title,
     prompt: task.prompt,
     issueUrl: task.issueUrl,
-    projectKind: "typescript-monorepo"
+    projectKind: projectContext.projectKind,
+    projectContext
   });
 
   task = setStatus(task, "WAITING_FOR_PLAN_APPROVAL");
@@ -110,70 +213,46 @@ export function approvePlanFlow(store: RunnerStore, task: AgentTask): AgentTask 
 
   const diff: DiffSummary = {
     taskId: task.id,
-    filesChanged: ["src/login.ts", "tests/login.spec.ts"],
+    filesChanged: task.projectContext?.hasFrontend
+      ? ["app/login/page.tsx", "tests/login.spec.ts"]
+      : ["src/index.ts", "test/index.test.ts"],
     patch: [
-      "diff --git a/src/login.ts b/src/login.ts",
-      "+ attachSubmitHandler(loginButton, submitLoginForm);",
-      "diff --git a/tests/login.spec.ts b/tests/login.spec.ts",
-      "+ expect(await loginButton.isEnabled()).toBe(true);"
+      `diff --git a/${task.projectContext?.hasFrontend ? "app/login/page.tsx" : "src/index.ts"} b/${task.projectContext?.hasFrontend ? "app/login/page.tsx" : "src/index.ts"}`,
+      "+ // Minimal approved implementation patch would be applied here.",
+      `diff --git a/${task.projectContext?.hasFrontend ? "tests/login.spec.ts" : "test/index.test.ts"} b/${task.projectContext?.hasFrontend ? "tests/login.spec.ts" : "test/index.test.ts"}`,
+      "+ // Regression coverage for the approved task."
     ].join("\n")
   };
   store.diffs.set(task.id, diff);
 
   next = setStatus(next, "TESTING");
-  const tests: TestResult[] = [
-    {
-      id: createId("test"),
-      taskId: task.id,
-      command: "pnpm lint",
-      status: "PASSED",
-      output: "Lint completed without errors.",
-      durationMs: 1280,
-      createdAt: new Date()
-    },
-    {
-      id: createId("test"),
-      taskId: task.id,
-      command: "pnpm typecheck",
-      status: "PASSED",
-      output: "TypeScript completed without errors.",
-      durationMs: 1904,
-      createdAt: new Date()
-    },
-    {
-      id: createId("test"),
-      taskId: task.id,
-      command: "pnpm test",
-      status: "PASSED",
-      output: "Unit tests passed.",
-      durationMs: 2311,
-      createdAt: new Date()
-    }
-  ];
+  const verification = createVerificationResults(task);
+  const tests = verification.unit;
   tests.forEach((result) => appendTest(store, result));
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
     phase: "TESTING",
-    message: "Lint, typecheck, and unit tests passed."
+    message: tests.length
+      ? `Verification commands passed: ${tests.map((test) => test.command).join(", ")}.`
+      : "No unit verification command was detected; recorded as skipped for manual review."
   }));
 
-  next = setStatus(next, "E2E_VERIFYING");
-  const e2e: TestResult = {
-    id: createId("test"),
-    taskId: task.id,
-    command: "pnpm test:e2e",
-    status: "PASSED",
-    output: "Playwright smoke path passed.",
-    durationMs: 3412,
-    createdAt: new Date()
-  };
-  appendTest(store, e2e);
+  if (verification.e2e) {
+    next = setStatus(next, "E2E_VERIFYING");
+    appendTest(store, verification.e2e);
+    appendLog(store, createRunLog({
+      taskId: task.id,
+      level: "info",
+      phase: "E2E_VERIFYING",
+      message: `${verification.e2e.command} passed.`
+    }));
+  }
 
   next = setStatus(next, "SELF_REVIEWING");
   const selfReview = createSelfReview({
     changedFiles: diff.filesChanged,
-    tests: [...tests, e2e],
+    tests: verification.e2e ? [...tests, verification.e2e] : tests,
     summary: "Patched the login interaction path and added regression coverage."
   });
   next = {

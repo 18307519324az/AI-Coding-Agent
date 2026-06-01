@@ -27,7 +27,7 @@ export default async function TaskDetailPage({
           <p className="eyebrow">Task detail</p>
           <h1>{task.title}</h1>
           <p className="page-subtitle">
-            {repo ? `${repo.owner}/${repo.name}` : "Unknown repository"} · branch {task.branchName ?? "not created"}
+            {repo ? `${repo.owner}/${repo.name}` : "Unknown repository"} - branch {task.branchName ?? "not created"}
           </p>
         </div>
         <div className="toolbar">
@@ -98,6 +98,44 @@ export default async function TaskDetailPage({
         </section>
 
         <section className="panel">
+          <h2>Project Context</h2>
+          {task.projectContext ? (
+            <div className="grid" style={{ gap: 10 }}>
+              <div>
+                <span className="muted small">Project</span>
+                <p>
+                  <strong>{task.projectContext.projectKind}</strong> using{" "}
+                  <strong>{task.projectContext.packageManager}</strong>
+                </p>
+              </div>
+              <div>
+                <span className="muted small">Recommended commands</span>
+                <ul>
+                  {Object.entries(task.projectContext.recommendedCommands)
+                    .filter(([, command]) => Boolean(command))
+                    .map(([name, command]) => (
+                      <li key={name}>
+                        <strong>{name}</strong>: {command}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+              <div>
+                <span className="muted small">Relevant files</span>
+                <p className="small">{task.projectContext.relevantFiles.slice(0, 8).join(", ")}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state">
+              <strong>Context pending</strong>
+              <span className="muted small">The runner records project structure after repository analysis.</span>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="grid two" style={{ marginTop: 16 }}>
+        <section className="panel">
           <h2>Run Log</h2>
           {taskLogs.length === 0 ? (
             <div className="empty-state">
@@ -116,9 +154,7 @@ export default async function TaskDetailPage({
             </div>
           )}
         </section>
-      </div>
 
-      <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
           <h2>Diff Preview</h2>
           {task.diff ? (
@@ -133,7 +169,9 @@ export default async function TaskDetailPage({
             </div>
           )}
         </section>
+      </div>
 
+      <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
           <h2>Test Results</h2>
           {taskTests.length === 0 ? (
@@ -145,29 +183,29 @@ export default async function TaskDetailPage({
                   <strong>{test.command}</strong>
                   <StatusBadge status={test.status} />
                   <p className="muted small">
-                    {test.output} · {test.durationMs} ms
+                    {test.output} - {test.durationMs} ms
                   </p>
                 </div>
               ))}
             </div>
           )}
         </section>
-      </div>
 
-      <section className="panel" style={{ marginTop: 16 }}>
-        <h2>Self Review</h2>
-        {task.selfReview ? (
-          <>
-            <p>{task.selfReview.summary}</p>
-            <p className="muted small">{task.selfReview.recommendation}</p>
-          </>
-        ) : (
-          <div className="empty-state">
-            <strong>Self-review pending</strong>
-            <span className="muted small">The runner writes this after tests complete.</span>
-          </div>
-        )}
-      </section>
+        <section className="panel">
+          <h2>Self Review</h2>
+          {task.selfReview ? (
+            <>
+              <p>{task.selfReview.summary}</p>
+              <p className="muted small">{task.selfReview.recommendation}</p>
+            </>
+          ) : (
+            <div className="empty-state">
+              <strong>Self-review pending</strong>
+              <span className="muted small">The runner writes this after tests complete.</span>
+            </div>
+          )}
+        </section>
+      </div>
     </>
   );
 }

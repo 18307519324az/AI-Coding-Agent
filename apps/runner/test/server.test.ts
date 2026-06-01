@@ -109,7 +109,8 @@ describe("runner API", () => {
     const body = afterApproval.json<{
       approvals: Array<{ type: string; status: string }>;
       diff: { filesChanged: string[] };
-      tests: Array<{ status: string }>;
+      projectContext: { hasFrontend: boolean; recommendedCommands: { e2e?: string } };
+      tests: Array<{ command: string; status: string }>;
     }>();
 
     expect(body.approvals).toEqual(
@@ -117,7 +118,16 @@ describe("runner API", () => {
         expect.objectContaining({ type: "CREATE_PR", status: "PENDING" })
       ])
     );
-    expect(body.diff.filesChanged).toContain("src/login.ts");
+    expect(body.projectContext).toMatchObject({
+      hasFrontend: true,
+      recommendedCommands: {
+        e2e: "pnpm test:e2e"
+      }
+    });
+    expect(body.diff.filesChanged).toContain("app/login/page.tsx");
+    expect(body.tests.map((test) => test.command)).toEqual(
+      expect.arrayContaining(["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm test:e2e"])
+    );
     expect(body.tests.every((test) => test.status === "PASSED")).toBe(true);
   });
 

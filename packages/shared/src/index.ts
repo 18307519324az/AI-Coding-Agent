@@ -84,6 +84,26 @@ export const SelfReviewOutputSchema = z.object({
 });
 export type SelfReviewOutput = z.infer<typeof SelfReviewOutputSchema>;
 
+export const PackageManagerSchema = z.enum(["pnpm", "npm", "yarn", "bun", "unknown"]);
+export type PackageManager = z.infer<typeof PackageManagerSchema>;
+
+export const ProjectContextSchema = z.object({
+  rootPath: z.string(),
+  packageManager: PackageManagerSchema,
+  projectKind: z.enum(["next", "vite", "node", "monorepo", "unknown"]),
+  hasFrontend: z.boolean(),
+  scripts: z.record(z.string()),
+  recommendedCommands: z.object({
+    install: z.string().optional(),
+    lint: z.string().optional(),
+    typecheck: z.string().optional(),
+    test: z.string().optional(),
+    e2e: z.string().optional()
+  }),
+  relevantFiles: z.array(z.string())
+});
+export type ProjectContext = z.infer<typeof ProjectContextSchema>;
+
 export const AgentTaskSchema = z.object({
   id: z.string(),
   userId: z.string(),
@@ -95,6 +115,7 @@ export const AgentTaskSchema = z.object({
   branchName: z.string().optional(),
   prUrl: z.string().url().optional(),
   plan: PlanOutputSchema.optional(),
+  projectContext: ProjectContextSchema.optional(),
   selfReview: SelfReviewOutputSchema.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date()
@@ -162,26 +183,6 @@ export const DiffSummarySchema = z.object({
   patch: z.string()
 });
 export type DiffSummary = z.infer<typeof DiffSummarySchema>;
-
-export const PackageManagerSchema = z.enum(["pnpm", "npm", "yarn", "bun", "unknown"]);
-export type PackageManager = z.infer<typeof PackageManagerSchema>;
-
-export const ProjectContextSchema = z.object({
-  rootPath: z.string(),
-  packageManager: PackageManagerSchema,
-  projectKind: z.enum(["next", "vite", "node", "monorepo", "unknown"]),
-  hasFrontend: z.boolean(),
-  scripts: z.record(z.string()),
-  recommendedCommands: z.object({
-    install: z.string().optional(),
-    lint: z.string().optional(),
-    typecheck: z.string().optional(),
-    test: z.string().optional(),
-    e2e: z.string().optional()
-  }),
-  relevantFiles: z.array(z.string())
-});
-export type ProjectContext = z.infer<typeof ProjectContextSchema>;
 
 export const ApiErrorSchema = z.object({
   error: z.string(),
