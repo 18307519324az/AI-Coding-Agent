@@ -32,6 +32,29 @@ Actions:
 - Review risks.
 - Approve or reject from the task detail view.
 
+## Store Selection
+
+Default local development uses `RUNNER_STORE_FILE=.runner-data/store.json`.
+
+For SQLite persistence:
+
+```bash
+RUNNER_SQLITE_FILE=.runner-data/store.db pnpm --filter runner dev
+```
+
+For the Prisma relational schema:
+
+```bash
+DATABASE_URL=file:./.runner-data/dev.db pnpm --filter runner db:generate
+DATABASE_URL=file:./.runner-data/dev.db pnpm --filter runner db:push
+```
+
+Actions:
+
+- Keep `.runner-data/` out of git.
+- Back up the SQLite file before manual schema experiments.
+- Prefer a fresh database for integration tests that mutate tasks.
+
 ## Tests Failed
 
 Actions:

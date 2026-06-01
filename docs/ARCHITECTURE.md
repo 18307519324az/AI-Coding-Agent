@@ -57,7 +57,7 @@ The runner can operate in two execution modes:
 
 In live PR mode, the PR approval gate also publishes the prepared branch through the same command policy: `git checkout -b`, `git add .`, bounded `git commit -m`, and approval-backed `git push`. The runner creates the GitHub draft PR only after that branch publish step succeeds.
 
-The MVP store is in-memory by default and can be file-backed with `RUNNER_STORE_FILE`. The Prisma schema documents the SQLite persistence shape for a fuller database-backed implementation.
+The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
 
 ### Agent Core
 

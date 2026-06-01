@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createFileBackedStore, persistStore } from "../src/store";
+import { createFileBackedStore, createSqliteBackedStore, persistStore } from "../src/store";
 import { createServer } from "../src/server";
 
-function testStorePath(name: string): string {
-  return path.join(process.cwd(), "test-results", `${name}-${Date.now()}.json`);
+function testStorePath(name: string, extension = "json"): string {
+  return path.join(process.cwd(), "test-results", `${name}-${Date.now()}.${extension}`);
 }
 
 describe("runner store persistence", () => {
@@ -31,6 +31,35 @@ describe("runner store persistence", () => {
       name: "portal"
     });
 
+    store.close?.();
+    restored.close?.();
+    fs.rmSync(filePath, { force: true });
+  });
+
+  it("round-trips persisted records through SQLite", () => {
+    const filePath = testStorePath("sqlite-round-trip", "db");
+    const store = createSqliteBackedStore(filePath);
+
+    store.repositories.set("repo_1", {
+      id: "repo_1",
+      owner: "acme",
+      name: "portal",
+      url: "https://github.com/acme/portal",
+      defaultBranch: "main",
+      provider: "github",
+      createdAt: new Date("2026-06-01T01:00:00Z")
+    });
+    persistStore(store);
+
+    const restored = createSqliteBackedStore(filePath);
+    expect(restored.repositories.get("repo_1")?.createdAt).toBeInstanceOf(Date);
+    expect(restored.repositories.get("repo_1")).toMatchObject({
+      owner: "acme",
+      name: "portal"
+    });
+
+    store.close?.();
+    restored.close?.();
     fs.rmSync(filePath, { force: true });
   });
 

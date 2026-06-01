@@ -15,6 +15,7 @@ import {
   TestResultSchema
 } from "@ai-coding-agent/shared";
 import fs from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
 
 export type RunnerStore = {
@@ -24,6 +25,7 @@ export type RunnerStore = {
   approvals: Map<string, Approval[]>;
   tests: Map<string, TestResult[]>;
   diffs: Map<string, DiffSummary>;
+  close?: () => void;
   persist?: () => void;
 };
 
@@ -100,6 +102,37 @@ export function createFileBackedStore(filePath: string): RunnerStore {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, `${JSON.stringify(createSnapshot(store), null, 2)}\n`);
   };
+  return store;
+}
+
+export function createSqliteBackedStore(filePath: string): RunnerStore {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const database = new DatabaseSync(filePath);
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS runner_snapshot (
+      id TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )
+  `);
+
+  const row = database
+    .prepare("SELECT value FROM runner_snapshot WHERE id = ?")
+    .get("default") as { value: string } | undefined;
+  const store = createStore(row ? parseSnapshot(row.value) : undefined);
+  const upsert = database.prepare(`
+    INSERT INTO runner_snapshot (id, value, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      value = excluded.value,
+      updated_at = excluded.updated_at
+  `);
+
+  store.persist = () => {
+    upsert.run("default", JSON.stringify(createSnapshot(store), null, 2), new Date().toISOString());
+  };
+  store.close = () => database.close();
+
   return store;
 }
 
