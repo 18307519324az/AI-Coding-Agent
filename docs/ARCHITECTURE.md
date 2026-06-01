@@ -55,6 +55,8 @@ The runner can operate in two execution modes:
 - `mock`: deterministic task flow for UI iteration, local tests, and demos without cloning external repositories.
 - `workspace`: clones the target GitHub repository into a task-scoped workspace, analyzes `package.json` and relevant project files, then runs allowlisted verification commands after plan approval.
 
+In live PR mode, the PR approval gate also publishes the prepared branch through the same command policy: `git checkout -b`, `git add .`, bounded `git commit -m`, and approval-backed `git push`. The runner creates the GitHub draft PR only after that branch publish step succeeds.
+
 The MVP store is in-memory by default and can be file-backed with `RUNNER_STORE_FILE`. The Prisma schema documents the SQLite persistence shape for a fuller database-backed implementation.
 
 ### Agent Core
@@ -114,5 +116,4 @@ This keeps the product auditable and prevents prompt text from becoming executio
 - Add OpenAI Responses API or Agents SDK planner/executor behind `packages/agent-core`.
 - Add a persistent job queue for long-running tasks.
 - Add model-driven patch application before workspace verification.
-- Add branch commit and push before live Octokit PR creation.
 - Add workspace cleanup jobs.

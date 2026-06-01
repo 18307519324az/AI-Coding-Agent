@@ -15,10 +15,11 @@ import type {
   TestResult
 } from "@ai-coding-agent/shared";
 import { appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
-import { executeAllowedCommand, type CommandExecutionResult } from "./command-executor";
+import { executeAllowedCommand, type CommandExecutionResult, type CommandRunner } from "./command-executor";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { createPullRequest, type CreatePullRequestInput } from "./github-service";
+import { publishBranch, type BranchPublisher } from "./git-publisher";
 import { analyzeProject } from "./project-analyzer";
 import { cloneRepository } from "./workspace";
 
@@ -28,8 +29,6 @@ export type RepositoryCloner = (input: {
 }) => Promise<string>;
 
 export type ProjectAnalyzer = (rootPath: string) => Promise<ProjectContext>;
-
-export type CommandRunner = typeof executeAllowedCommand;
 
 export type TaskFlowOptions = {
   workspaceExecution?: boolean;
@@ -41,6 +40,14 @@ export type ApprovePlanFlowOptions = {
   executeCommands?: boolean;
   commandRunner?: CommandRunner;
 };
+
+export type ApprovePrFlowOptions = {
+  branchPublisher?: BranchPublisher;
+  commandRunner?: CommandRunner;
+  pullRequestCreator?: PullRequestCreator;
+};
+
+export type { BranchPublisher, CommandRunner };
 
 type VerificationResults = {
   unit: TestResult[];
@@ -73,8 +80,14 @@ function shouldUseWorkspaceExecution(options: TaskFlowOptions): boolean {
 }
 
 function createBranchName(request: ResolvedCreateTaskRequest): string {
+  const prefix = request.branchPrefix
+    .toLowerCase()
+    .replace(/[^a-z0-9._/-]+/g, "-")
+    .replace(/\/+/g, "/")
+    .replace(/(^\/+|\/+$)/g, "")
+    .replace(/\.\.+/g, ".");
   const slug = request.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
-  return `${request.branchPrefix}/${slug || "task"}`;
+  return `${prefix || "agent"}/${slug || "task"}`;
 }
 
 function isE2eCommand(command: string): boolean {
@@ -615,7 +628,7 @@ export async function approvePrFlow(
   store: RunnerStore,
   task: AgentTask,
   approval?: Approval,
-  pullRequestCreator: PullRequestCreator = createPullRequest
+  options: ApprovePrFlowOptions = {}
 ): Promise<AgentTask> {
   let next = setStatus(task, "PR_CREATING");
   appendLog(store, createRunLog({
@@ -629,6 +642,7 @@ export async function approvePrFlow(
   const owner = repo?.owner ?? "example";
   const name = repo?.name ?? "repo";
   const title = getApprovalString(approval, "title") ?? task.title;
+  const head = task.branchName ?? `agent/${task.id}`;
   const body = getApprovalString(approval, "body") ?? generatePullRequestBody(task.selfReview ?? createSelfReview({
     changedFiles: store.diffs.get(task.id)?.filesChanged ?? [],
     tests: store.tests.get(task.id) ?? [],
@@ -636,13 +650,34 @@ export async function approvePrFlow(
   }));
 
   try {
-    const prUrl = shouldUseLiveGitHubPr()
-      ? await pullRequestCreator({
+    const useLiveGitHubPr = shouldUseLiveGitHubPr();
+    if (useLiveGitHubPr) {
+      const cwd = task.projectContext?.rootPath;
+      if (!cwd) {
+        throw new Error("Live PR creation requires a workspace path for branch publishing.");
+      }
+
+      await (options.branchPublisher ?? publishBranch)({
+        cwd,
+        branchName: head,
+        commitMessage: title,
+        commandRunner: options.commandRunner ?? executeAllowedCommand
+      });
+      appendLog(store, createRunLog({
+        taskId: task.id,
+        level: "info",
+        phase: "PR_CREATING",
+        message: `Branch pushed for PR head ${head}.`
+      }));
+    }
+
+    const prUrl = useLiveGitHubPr
+      ? await (options.pullRequestCreator ?? createPullRequest)({
           owner,
           repo: name,
           title,
           body,
-          head: task.branchName ?? `agent/${task.id}`,
+          head,
           base: repo?.defaultBranch ?? "main",
           draft: true
         })
@@ -661,7 +696,7 @@ export async function approvePrFlow(
       taskId: task.id,
       level: "info",
       phase: "COMPLETED",
-      message: shouldUseLiveGitHubPr()
+      message: useLiveGitHubPr
         ? `Draft PR created: ${next.prUrl}`
         : `Draft PR simulated: ${next.prUrl}`
     }));

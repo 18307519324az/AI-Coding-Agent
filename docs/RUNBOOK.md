@@ -71,6 +71,13 @@ Checks:
 - Branch was pushed successfully.
 - Base branch exists.
 - Approval exists for PR creation.
+- In live PR mode, the branch publish commands passed before Octokit PR creation.
+
+Actions:
+
+- Inspect the `PR_CREATING` logs for the failed git command or GitHub API error.
+- Confirm the workspace has a non-empty diff before retrying branch publish.
+- Do not retry with broader GitHub permissions until the failing step is understood.
 
 ## Suspected Secret Leak
 

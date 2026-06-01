@@ -8,6 +8,12 @@ export type CommandExecutionResult = {
   durationMs: number;
 };
 
+export type CommandRunner = (input: {
+  command: string;
+  cwd: string;
+  approvedHighRisk?: boolean;
+}) => Promise<CommandExecutionResult>;
+
 function splitCommand(command: string): [string, string[]] {
   const parts: string[] = [];
   let current = "";
@@ -55,11 +61,7 @@ function splitCommand(command: string): [string, string[]] {
   return [file, args];
 }
 
-export async function executeAllowedCommand(input: {
-  command: string;
-  cwd: string;
-  approvedHighRisk?: boolean;
-}): Promise<CommandExecutionResult> {
+export const executeAllowedCommand: CommandRunner = async (input) => {
   const startedAt = Date.now();
   const decision = evaluateCommand(input.command);
 
@@ -103,4 +105,4 @@ export async function executeAllowedCommand(input: {
       durationMs: Date.now() - startedAt
     };
   }
-}
+};

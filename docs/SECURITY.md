@@ -108,6 +108,7 @@ Before PR creation:
 - Self-review must be generated.
 - Diff must be visible to the user.
 - Create PR approval must be approved.
+- Live branch publishing must run through the command allowlist.
+- `git push` must receive explicit approval context from the PR approval flow.
 
 The product must never merge PRs automatically in MVP.
-

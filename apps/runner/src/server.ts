@@ -16,6 +16,7 @@ import {
   approvePlanFlow,
   approvePrFlow,
   createTaskFlow,
+  type BranchPublisher,
   type CommandRunner,
   type ProjectAnalyzer,
   type PullRequestCreator,
@@ -37,6 +38,7 @@ export type ServerOptions = {
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
   commandRunner?: CommandRunner;
+  branchPublisher?: BranchPublisher;
   pullRequestCreator?: PullRequestCreator;
 };
 
@@ -200,7 +202,11 @@ export function createServer(store: RunnerStore = createStore(), options: Server
       });
     }
     if (approval.type === "CREATE_PR") {
-      return approvePrFlow(store, task, resolved, options.pullRequestCreator);
+      return approvePrFlow(store, task, resolved, {
+        branchPublisher: options.branchPublisher,
+        commandRunner: options.commandRunner,
+        pullRequestCreator: options.pullRequestCreator
+      });
     }
 
     return store.tasks.get(taskId);

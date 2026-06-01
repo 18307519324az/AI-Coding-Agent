@@ -430,6 +430,92 @@ describe("runner API", () => {
     });
   });
 
+  it("publishes the branch before live PR creation", async () => {
+    const previousMode = process.env.GITHUB_PR_MODE;
+    process.env.GITHUB_PR_MODE = "live";
+    try {
+      const publishedBranches: unknown[] = [];
+      const createdPullRequests: unknown[] = [];
+      const app = createServer(undefined, {
+        branchPublisher: async (input) => {
+          publishedBranches.push(input);
+        },
+        pullRequestCreator: async (input) => {
+          createdPullRequests.push(input);
+          return "https://github.com/example/repo/pull/12";
+        }
+      });
+      const created = await app.inject({
+        method: "POST",
+        url: "/api/tasks",
+        payload: {
+          repositoryUrl: "https://github.com/example/repo",
+          title: "Fix login button",
+          prompt: "The login button does not respond when clicked.",
+          branchPrefix: "agent",
+          allowDependencyInstall: false,
+          allowCreatePr: false
+        }
+      });
+      const { taskId } = created.json<{ taskId: string }>();
+      const detail = await app.inject({
+        method: "GET",
+        url: `/api/tasks/${taskId}`
+      });
+      const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+        (approval) => approval.type === "PLAN"
+      );
+
+      await app.inject({
+        method: "POST",
+        url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/approve`
+      });
+
+      const readyForPr = await app.inject({
+        method: "GET",
+        url: `/api/tasks/${taskId}`
+      });
+      const readyBody = readyForPr.json<{
+        approvals: Array<{ id: string; type: string }>;
+        branchName: string;
+        projectContext: { rootPath: string };
+      }>();
+      const prApproval = readyBody.approvals.find((approval) => approval.type === "CREATE_PR");
+
+      const approved = await app.inject({
+        method: "POST",
+        url: `/api/tasks/${taskId}/approvals/${prApproval?.id}/approve`
+      });
+
+      expect(approved.statusCode).toBe(200);
+      expect(approved.json()).toMatchObject({
+        status: "COMPLETED",
+        prUrl: "https://github.com/example/repo/pull/12"
+      });
+      expect(publishedBranches).toEqual([
+        expect.objectContaining({
+          cwd: readyBody.projectContext.rootPath,
+          branchName: readyBody.branchName,
+          commitMessage: "Fix login button"
+        })
+      ]);
+      expect(createdPullRequests).toEqual([
+        expect.objectContaining({
+          owner: "example",
+          repo: "repo",
+          head: readyBody.branchName,
+          draft: true
+        })
+      ]);
+    } finally {
+      if (previousMode === undefined) {
+        delete process.env.GITHUB_PR_MODE;
+      } else {
+        process.env.GITHUB_PR_MODE = previousMode;
+      }
+    }
+  });
+
   it("rejects an approval and cancels the task", async () => {
     const app = createServer();
     const created = await app.inject({

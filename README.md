@@ -71,6 +71,6 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 4. Runner executes guarded steps, records logs, stores diff and test results.
 5. Runner produces a self-review.
 6. User approves PR creation.
-7. Runner creates or simulates the PR and records the PR URL.
+7. In live PR mode, Runner creates a branch, commits the approved workspace diff, pushes the branch through the command allowlist, creates a draft PR, and records the PR URL. In default mode, PR creation remains simulated.
 
-The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, and run allowlisted verification commands after plan approval. Real OpenAI patch generation and full branch push automation are isolated behind the runner and agent-core boundaries so they can be added without changing the Web console contract.
+The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, and run allowlisted verification commands after plan approval. Real OpenAI patch generation remains isolated behind the runner and agent-core boundaries so it can be added without changing the Web console contract.
