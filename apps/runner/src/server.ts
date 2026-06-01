@@ -163,7 +163,7 @@ export function createServer(store: RunnerStore = createStore()) {
       return approvePlanFlow(store, task);
     }
     if (approval.type === "CREATE_PR") {
-      return approvePrFlow(store, task);
+      return approvePrFlow(store, task, resolved);
     }
 
     return store.tasks.get(taskId);

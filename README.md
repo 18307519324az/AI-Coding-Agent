@@ -48,6 +48,7 @@ GITHUB_TOKEN=...
 OPENAI_API_KEY=...
 WORKSPACE_ROOT=.workspaces
 RUNNER_STORE_FILE=.runner-data/store.json
+GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
 

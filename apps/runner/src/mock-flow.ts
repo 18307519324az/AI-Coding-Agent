@@ -17,6 +17,7 @@ import type {
 import { appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
+import { createPullRequest, type CreatePullRequestInput } from "./github-service";
 
 function setStatus(task: AgentTask, status: AgentTask["status"]): AgentTask {
   assertTransition(task.status, status);
@@ -294,7 +295,23 @@ export function approvePlanFlow(store: RunnerStore, task: AgentTask): AgentTask 
   return next;
 }
 
-export function approvePrFlow(store: RunnerStore, task: AgentTask): AgentTask {
+export type PullRequestCreator = (input: CreatePullRequestInput) => Promise<string>;
+
+function getApprovalString(approval: Approval | undefined, key: string): string | undefined {
+  const value = approval?.payload[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function shouldUseLiveGitHubPr(): boolean {
+  return process.env.GITHUB_PR_MODE === "live";
+}
+
+export async function approvePrFlow(
+  store: RunnerStore,
+  task: AgentTask,
+  approval?: Approval,
+  pullRequestCreator: PullRequestCreator = createPullRequest
+): Promise<AgentTask> {
   let next = setStatus(task, "PR_CREATING");
   appendLog(store, createRunLog({
     taskId: task.id,
@@ -306,22 +323,59 @@ export function approvePrFlow(store: RunnerStore, task: AgentTask): AgentTask {
   const repo = store.repositories.get(task.repositoryId);
   const owner = repo?.owner ?? "example";
   const name = repo?.name ?? "repo";
-
-  next = setStatus(next, "COMPLETED");
-  next = {
-    ...next,
-    prUrl: `https://github.com/${owner}/${name}/pull/1`,
-    updatedAt: new Date()
-  };
-  store.tasks.set(next.id, next);
-  persistStore(store);
-
-  appendLog(store, createRunLog({
-    taskId: task.id,
-    level: "info",
-    phase: "COMPLETED",
-    message: `Draft PR created: ${next.prUrl}`
+  const title = getApprovalString(approval, "title") ?? task.title;
+  const body = getApprovalString(approval, "body") ?? generatePullRequestBody(task.selfReview ?? createSelfReview({
+    changedFiles: store.diffs.get(task.id)?.filesChanged ?? [],
+    tests: store.tests.get(task.id) ?? [],
+    summary: "PR creation requested after approval."
   }));
 
-  return next;
+  try {
+    const prUrl = shouldUseLiveGitHubPr()
+      ? await pullRequestCreator({
+          owner,
+          repo: name,
+          title,
+          body,
+          head: task.branchName ?? `agent/${task.id}`,
+          base: repo?.defaultBranch ?? "main",
+          draft: true
+        })
+      : `https://github.com/${owner}/${name}/pull/1`;
+
+    next = setStatus(next, "COMPLETED");
+    next = {
+      ...next,
+      prUrl,
+      updatedAt: new Date()
+    };
+    store.tasks.set(next.id, next);
+    persistStore(store);
+
+    appendLog(store, createRunLog({
+      taskId: task.id,
+      level: "info",
+      phase: "COMPLETED",
+      message: shouldUseLiveGitHubPr()
+        ? `Draft PR created: ${next.prUrl}`
+        : `Draft PR simulated: ${next.prUrl}`
+    }));
+
+    return next;
+  } catch (error) {
+    next = setStatus(next, "FAILED_PR_CREATE");
+    next = {
+      ...next,
+      updatedAt: new Date()
+    };
+    store.tasks.set(next.id, next);
+    persistStore(store);
+    appendLog(store, createRunLog({
+      taskId: task.id,
+      level: "error",
+      phase: "FAILED_PR_CREATE",
+      message: error instanceof Error ? error.message : "Failed to create Pull Request."
+    }));
+    return next;
+  }
 }

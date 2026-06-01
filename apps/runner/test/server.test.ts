@@ -131,6 +131,54 @@ describe("runner API", () => {
     expect(body.tests.every((test) => test.status === "PASSED")).toBe(true);
   });
 
+  it("approves PR creation after the PR approval gate", async () => {
+    const app = createServer();
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix login button",
+        prompt: "The login button does not respond when clicked.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+    const { taskId } = created.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "PLAN"
+    );
+
+    await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/approve`
+    });
+
+    const readyForPr = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const prApproval = readyForPr.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "CREATE_PR"
+    );
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${prApproval?.id}/approve`
+    });
+
+    expect(approved.statusCode).toBe(200);
+    expect(approved.json()).toMatchObject({
+      status: "COMPLETED",
+      prUrl: "https://github.com/example/repo/pull/1"
+    });
+  });
+
   it("rejects an approval and cancels the task", async () => {
     const app = createServer();
     const created = await app.inject({
