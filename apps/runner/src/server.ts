@@ -12,7 +12,7 @@ import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { approvePlanFlow, approvePrFlow, createTaskFlow } from "./mock-flow";
-import { createStore, listTaskApprovals, upsertApproval, type RunnerStore } from "./store";
+import { createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
 
 const ParamsSchema = z.object({
   taskId: z.string()
@@ -91,6 +91,7 @@ export function createServer(store: RunnerStore = createStore()) {
         createdAt: new Date()
       };
       store.repositories.set(repository.id, repository);
+      persistStore(store);
 
       return reply.status(201).send(repository);
     } catch (error) {
@@ -196,6 +197,7 @@ export function createServer(store: RunnerStore = createStore()) {
       status: "CANCELLED",
       updatedAt: new Date()
     });
+    persistStore(store);
 
     return store.tasks.get(taskId);
   });
@@ -230,6 +232,7 @@ export function createServer(store: RunnerStore = createStore()) {
         message: "PR creation requested and waiting for approval."
       })
     ]);
+    persistStore(store);
 
     return reply.status(202).send({ approvalId: approval.id, status: approval.status });
   });

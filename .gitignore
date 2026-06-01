@@ -12,5 +12,6 @@ test-results/
 
 .codex/config.toml
 .workspaces/
+.runner-data/
 *.log
 *.tsbuildinfo

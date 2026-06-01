@@ -47,6 +47,7 @@ Runner variables:
 GITHUB_TOKEN=...
 OPENAI_API_KEY=...
 WORKSPACE_ROOT=.workspaces
+RUNNER_STORE_FILE=.runner-data/store.json
 RUNNER_PORT=8787
 ```
 
@@ -71,4 +72,3 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 7. Runner creates or simulates the PR and records the PR URL.
 
 The current implementation includes a complete mock/in-memory flow suitable for product iteration, unit tests, and UI verification. Real OpenAI model execution and persistent job storage are isolated behind the runner and agent-core boundaries so they can be added without changing the Web console contract.
-

@@ -14,7 +14,7 @@ import type {
   Repository,
   TestResult
 } from "@ai-coding-agent/shared";
-import { appendLog, appendTest, type RunnerStore, upsertApproval } from "./store";
+import { appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
 
@@ -192,6 +192,7 @@ export function createTaskFlow(store: RunnerStore, request: CreateTaskRequest): 
 
   upsertApproval(store, approval);
   store.tasks.set(task.id, task);
+  persistStore(store);
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
@@ -224,6 +225,7 @@ export function approvePlanFlow(store: RunnerStore, task: AgentTask): AgentTask 
     ].join("\n")
   };
   store.diffs.set(task.id, diff);
+  persistStore(store);
 
   next = setStatus(next, "TESTING");
   const verification = createVerificationResults(task);
@@ -281,6 +283,7 @@ export function approvePlanFlow(store: RunnerStore, task: AgentTask): AgentTask 
   upsertApproval(store, prApproval);
 
   store.tasks.set(next.id, next);
+  persistStore(store);
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
@@ -311,6 +314,7 @@ export function approvePrFlow(store: RunnerStore, task: AgentTask): AgentTask {
     updatedAt: new Date()
   };
   store.tasks.set(next.id, next);
+  persistStore(store);
 
   appendLog(store, createRunLog({
     taskId: task.id,
