@@ -212,6 +212,27 @@ export const RunnerJobSchema = z.object({
 });
 export type RunnerJob = z.infer<typeof RunnerJobSchema>;
 
+export const RunnerMetricsSchema = z.object({
+  service: z.literal("runner"),
+  uptimeSeconds: z.number().nonnegative(),
+  generatedAt: z.coerce.date(),
+  repositories: z.number().int().nonnegative(),
+  tasks: z.object({
+    total: z.number().int().nonnegative(),
+    byStatus: z.record(z.number().int().nonnegative())
+  }),
+  jobs: z.object({
+    total: z.number().int().nonnegative(),
+    byStatus: z.record(z.number().int().nonnegative())
+  }),
+  approvals: z.object({
+    pending: z.number().int().nonnegative()
+  }),
+  traces: z.number().int().nonnegative(),
+  logs: z.number().int().nonnegative()
+});
+export type RunnerMetrics = z.infer<typeof RunnerMetricsSchema>;
+
 export const CreateTaskRequestSchema = z.object({
   repositoryUrl: z.string().url(),
   title: z.string().min(3).optional(),

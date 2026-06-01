@@ -12,12 +12,14 @@ Checks:
 
 ```bash
 curl http://localhost:8787/health
+curl -H "Authorization: Bearer $RUNNER_API_KEY" http://localhost:8787/api/metrics
 pnpm --filter runner dev
 ```
 
 Actions:
 
 - Confirm `RUNNER_PORT`.
+- Confirm `/api/metrics` reports task, job, log, and trace counts when authenticated.
 - Check process logs.
 - If `RUNNER_API_KEY` is enabled, confirm Web and Runner have the same server-side value.
 - If `WEB_AUTH_PASSWORD` is enabled, confirm the operator can sign in at `/login`.

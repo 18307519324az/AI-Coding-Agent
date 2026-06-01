@@ -7,6 +7,7 @@ import type {
   E2eArtifact,
   Repository,
   RunnerJob,
+  RunnerMetrics,
   TestResult
 } from "@ai-coding-agent/shared";
 import {
@@ -96,6 +97,42 @@ function hydrateRunnerJob(job: RunnerJob): RunnerJob {
   };
 }
 
+function hydrateRunnerMetrics(metrics: RunnerMetrics): RunnerMetrics {
+  return {
+    ...metrics,
+    generatedAt: new Date(metrics.generatedAt)
+  };
+}
+
+function countBy(items: string[]): Record<string, number> {
+  return items.reduce<Record<string, number>>((counts, item) => ({
+    ...counts,
+    [item]: (counts[item] ?? 0) + 1
+  }), {});
+}
+
+function createMockRunnerMetrics(): RunnerMetrics {
+  return {
+    service: "runner",
+    uptimeSeconds: 0,
+    generatedAt: new Date("2026-05-31T09:30:00Z"),
+    repositories: mockRepositories.length,
+    tasks: {
+      total: mockTasks.length,
+      byStatus: countBy(mockTasks.map((task) => task.status))
+    },
+    jobs: {
+      total: mockRunnerJobs.length,
+      byStatus: countBy(mockRunnerJobs.map((job) => job.status))
+    },
+    approvals: {
+      pending: mockApprovals.filter((approval) => approval.status === "PENDING").length
+    },
+    traces: mockTraces.length,
+    logs: mockLogs.length
+  };
+}
+
 async function safeJson<T>(path: string): Promise<T | undefined> {
   try {
     const response = await fetch(`${runnerBaseUrl}${path}`, {
@@ -136,6 +173,11 @@ export async function listRunnerJobs(): Promise<RunnerJob[]> {
   }
 
   return live.jobs.map(hydrateRunnerJob);
+}
+
+export async function getRunnerMetrics(): Promise<RunnerMetrics> {
+  const live = await safeJson<RunnerMetrics>("/api/metrics");
+  return live ? hydrateRunnerMetrics(live) : createMockRunnerMetrics();
 }
 
 export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefined> {

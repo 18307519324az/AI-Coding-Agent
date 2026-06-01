@@ -76,6 +76,7 @@ Mount `RUNNER_ARTIFACT_DIR` on durable storage if Playwright reports and screens
 - Job worker concurrency and retry limits match runner host capacity.
 - Workspace cleanup policy is enabled.
 - E2E artifact storage is on the intended volume.
+- `/api/metrics` is reachable only with the Runner API key and is connected to the staging monitor.
 - CI passes before deploy.
 - PR creation remains approval-gated.
 - Runner API is authenticated before public exposure.

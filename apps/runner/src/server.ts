@@ -5,7 +5,7 @@ import {
   CreateTaskRequestSchema,
   RejectApprovalRequestSchema
 } from "@ai-coding-agent/shared";
-import type { Approval } from "@ai-coding-agent/shared";
+import type { AgentTaskStatus, Approval, RunnerJobStatus, RunnerMetrics } from "@ai-coding-agent/shared";
 import Fastify from "fastify";
 import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
@@ -122,7 +122,38 @@ function isMatchingSecret(actual: string | undefined, expected: string): boolean
   return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
+function countBy<T extends string>(items: T[]): Record<T, number> {
+  return items.reduce<Record<T, number>>((counts, item) => ({
+    ...counts,
+    [item]: (counts[item] ?? 0) + 1
+  }), {} as Record<T, number>);
+}
+
+function createRunnerMetrics(store: RunnerStore, startedAt: Date): RunnerMetrics {
+  const jobs = listJobs(store);
+  return {
+    service: "runner",
+    uptimeSeconds: Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 1000)),
+    generatedAt: new Date(),
+    repositories: store.repositories.size,
+    tasks: {
+      total: store.tasks.size,
+      byStatus: countBy([...store.tasks.values()].map((task) => task.status as AgentTaskStatus))
+    },
+    jobs: {
+      total: jobs.length,
+      byStatus: countBy(jobs.map((job) => job.status as RunnerJobStatus))
+    },
+    approvals: {
+      pending: [...store.approvals.values()].flat().filter((approval) => approval.status === "PENDING").length
+    },
+    traces: [...store.traces.values()].flat().length,
+    logs: [...store.logs.values()].flat().length
+  };
+}
+
 export function createServer(store: RunnerStore = createStore(), options: ServerOptions = {}) {
+  const startedAt = new Date();
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? "info",
@@ -198,6 +229,8 @@ export function createServer(store: RunnerStore = createStore(), options: Server
   app.get("/api/jobs", async () => ({
     jobs: listJobs(store)
   }));
+
+  app.get("/api/metrics", async () => createRunnerMetrics(store, startedAt));
 
   app.post("/api/workspaces/cleanup", async () => cleanupTaskWorkspaces(store, createWorkspaceCleanupOptions(options)));
 

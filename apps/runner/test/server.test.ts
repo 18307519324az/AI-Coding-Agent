@@ -70,6 +70,45 @@ describe("runner API", () => {
     });
   });
 
+  it("returns operational metrics for monitoring", async () => {
+    const app = createServer();
+    await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix login button",
+        prompt: "The login button does not respond when clicked.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/metrics"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      service: "runner",
+      repositories: 1,
+      tasks: {
+        total: 1,
+        byStatus: {
+          WAITING_FOR_PLAN_APPROVAL: 1
+        }
+      },
+      approvals: {
+        pending: 1
+      }
+    });
+    expect(response.json<{ logs: number; traces: number; uptimeSeconds: number }>().logs).toBeGreaterThan(0);
+    expect(response.json<{ logs: number; traces: number; uptimeSeconds: number }>().traces).toBeGreaterThan(0);
+    expect(response.json<{ logs: number; traces: number; uptimeSeconds: number }>().uptimeSeconds).toBeGreaterThanOrEqual(0);
+  });
+
   it("connects a GitHub repository", async () => {
     const app = createServer();
     const response = await app.inject({

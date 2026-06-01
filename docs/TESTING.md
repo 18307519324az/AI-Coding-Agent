@@ -39,6 +39,7 @@ Covered in `packages/agent-core/test`:
 Covered in `apps/runner/test`:
 
 - API key protection for Runner API routes while keeping `/health` public.
+- Runner metrics for tasks, jobs, approvals, logs, and traces.
 - Create task flow.
 - Plan approval waiting state.
 - Task trace persistence and state-transition exposure in task detail responses.
@@ -66,6 +67,7 @@ Covered in `apps/web/tests` with Playwright:
 - Dashboard task queue and approval state.
 - Web console login, invalid credential handling, and protected API rejection.
 - Runner Jobs page retry attempt and backoff display.
+- Settings page runner metrics display.
 - Create Task page loading, error, disabled, and success states through the server-side Runner proxy.
 - Task detail plan, diff, logs, tests, and approval controls.
 - Task detail execution trace.

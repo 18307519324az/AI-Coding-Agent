@@ -56,6 +56,16 @@ test("jobs page shows retry attempts and backoff state", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Implement command allowlist" })).toBeVisible();
 });
 
+test("settings page shows runner metrics", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/settings");
+
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByLabel("Runner metrics")).toBeVisible();
+  await expect(page.getByText("Runner uptime")).toBeVisible();
+  await expect(page.getByText("Pending approvals")).toBeVisible();
+});
+
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {
   await signIn(page);
   await delayRunnerPost(page, "**/api/runner/tasks");

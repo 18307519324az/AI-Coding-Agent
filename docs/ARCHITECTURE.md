@@ -53,10 +53,11 @@ The runner exposes:
 - `POST /api/tasks/:taskId/approvals/:approvalId/reject`
 - `POST /api/tasks/:taskId/create-pr`
 - `GET /api/jobs`
+- `GET /api/metrics`
 - `POST /api/jobs/process-next`
 - `POST /api/workspaces/cleanup`
 
-Task detail responses include approvals, trace events, logs, diff, test results, related jobs, and E2E artifacts. Trace events are separate state-transition records, while logs carry detailed runner messages. When workspace E2E execution runs Playwright, the runner copies `playwright-report/` and `test-results/**/*.png` into the configured artifact directory before exposing report and screenshot paths.
+Task detail responses include approvals, trace events, logs, diff, test results, related jobs, and E2E artifacts. `/api/metrics` reports task, job, approval, log, and trace counts for staging and operations monitoring. Trace events are separate state-transition records, while logs carry detailed runner messages. When workspace E2E execution runs Playwright, the runner copies `playwright-report/` and `test-results/**/*.png` into the configured artifact directory before exposing report and screenshot paths.
 
 The runner can operate in two execution modes:
 
