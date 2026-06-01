@@ -29,6 +29,7 @@ The Web console is an operational UI, not a marketing page. It provides:
 - Dashboard metrics.
 - Repository connection screens.
 - Task list and task detail pages.
+- Runner job queue page with attempts, retry backoff, and terminal errors.
 - Plan approval and PR approval controls.
 - Log timeline.
 - Diff preview.

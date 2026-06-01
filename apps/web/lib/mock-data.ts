@@ -5,6 +5,7 @@ import type {
   DiffSummary,
   E2eArtifact,
   Repository,
+  RunnerJob,
   TestResult
 } from "@ai-coding-agent/shared";
 
@@ -176,6 +177,34 @@ export const e2eArtifacts: E2eArtifact[] = [
       }
     ],
     createdAt: new Date("2026-05-31T09:22:30Z")
+  }
+];
+
+export const runnerJobs: RunnerJob[] = [
+  {
+    id: "job_plan_login",
+    taskId: "task_login",
+    type: "PLAN_TASK",
+    status: "COMPLETED",
+    payload: { taskId: "task_login" },
+    attempts: 1,
+    maxAttempts: 3,
+    createdAt: new Date("2026-05-31T09:00:30Z"),
+    startedAt: new Date("2026-05-31T09:00:31Z"),
+    completedAt: new Date("2026-05-31T09:04:00Z")
+  },
+  {
+    id: "job_plan_allowlist",
+    taskId: "task_allowlist",
+    type: "PLAN_TASK",
+    status: "QUEUED",
+    payload: { taskId: "task_allowlist" },
+    attempts: 1,
+    maxAttempts: 3,
+    error: "Temporary model timeout.",
+    nextRunAt: new Date("2026-05-31T09:30:00Z"),
+    createdAt: new Date("2026-05-31T09:12:00Z"),
+    startedAt: new Date("2026-05-31T09:18:00Z")
   }
 ];
 

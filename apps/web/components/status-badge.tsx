@@ -1,7 +1,9 @@
-import type { AgentTaskStatus, TestStatus } from "@ai-coding-agent/shared";
+import type { AgentTaskStatus, RunnerJobStatus, TestStatus } from "@ai-coding-agent/shared";
 
-const successStatuses: AgentTaskStatus[] = ["COMPLETED"];
-const dangerStatuses: AgentTaskStatus[] = [
+type BadgeStatus = AgentTaskStatus | RunnerJobStatus | TestStatus;
+
+const successStatuses: BadgeStatus[] = ["COMPLETED"];
+const dangerStatuses: BadgeStatus[] = [
   "FAILED",
   "FAILED_CLONE",
   "FAILED_CONTEXT",
@@ -11,7 +13,9 @@ const dangerStatuses: AgentTaskStatus[] = [
   "FAILED_PR_CREATE",
   "CANCELLED"
 ];
-const warningStatuses: AgentTaskStatus[] = [
+const warningStatuses: BadgeStatus[] = [
+  "QUEUED",
+  "RUNNING",
   "WAITING_FOR_PLAN_APPROVAL",
   "WAITING_FOR_PR_APPROVAL",
   "TESTING",
@@ -19,17 +23,16 @@ const warningStatuses: AgentTaskStatus[] = [
   "PR_CREATING"
 ];
 
-export function StatusBadge({ status }: { status: AgentTaskStatus | TestStatus }) {
+export function StatusBadge({ status }: { status: BadgeStatus }) {
   let tone = "neutral";
 
-  if (status === "PASSED" || successStatuses.includes(status as AgentTaskStatus)) {
+  if (status === "PASSED" || successStatuses.includes(status)) {
     tone = "success";
-  } else if (status === "FAILED" || dangerStatuses.includes(status as AgentTaskStatus)) {
+  } else if (status === "FAILED" || dangerStatuses.includes(status)) {
     tone = "danger";
-  } else if (status === "SKIPPED" || warningStatuses.includes(status as AgentTaskStatus)) {
+  } else if (status === "SKIPPED" || warningStatuses.includes(status)) {
     tone = "warning";
   }
 
   return <span className={`badge ${tone}`}>{status.replaceAll("_", " ")}</span>;
 }
-

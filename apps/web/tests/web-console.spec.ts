@@ -38,9 +38,22 @@ test("dashboard shows task queue and approval state", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Jobs" })).toBeVisible();
   await expect(page.getByRole("link", { name: "New agent task" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Agent Tasks" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
+});
+
+test("jobs page shows retry attempts and backoff state", async ({ page }) => {
+  await signIn(page);
+  await page.goto("/jobs");
+
+  await expect(page.getByRole("heading", { name: "Runner Jobs" })).toBeVisible();
+  const retryRow = page.getByRole("row", { name: /job_plan_allowlist/ });
+  await expect(retryRow).toBeVisible();
+  await expect(retryRow.getByText("1 / 3")).toBeVisible();
+  await expect(retryRow.getByText("Temporary model timeout.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Implement command allowlist" })).toBeVisible();
 });
 
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {

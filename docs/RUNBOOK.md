@@ -109,6 +109,7 @@ curl -X POST http://localhost:8787/api/jobs/process-next
 Actions:
 
 - Confirm `POST /api/tasks` returns `202` with a `jobId`.
+- Use the Web console Jobs page to inspect attempts, backoff, and terminal errors.
 - Confirm task details include a `jobs` array with `PLAN_TASK`.
 - Confirm runner logs show `Runner job worker started`.
 - If jobs stay `QUEUED`, inspect `nextRunAt`. Future timestamps mean the job is waiting for retry backoff.
