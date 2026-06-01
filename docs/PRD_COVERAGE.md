@@ -42,11 +42,11 @@ Status legend:
 | UI reaches real SaaS product quality | Partial | Current UI avoids a generic landing page and includes product state density; final release still needs manual UX review. |
 | README lets a new user run within 10 minutes | Done | Quick Start includes `corepack enable`, `pnpm install`, `pnpm run doctor`, and `pnpm dev`; `.env.example` documents local mock defaults and integration credentials. |
 | CI passes | Done | Local full CI passed before this matrix update. |
+| First-release storage and queue backend selected | Done | `docs/RELEASE_DECISIONS.md` scopes first release to single-host durable JSON/SQLite snapshot storage with same-host worker file leasing; PostgreSQL/Redis/BullMQ are follow-up scale milestones. |
 | At least one real test repository PR created successfully | Unverified | `pnpm smoke:live-pr` and `pnpm smoke:live-issue-pr` are repeatable harnesses for this proof; a real run and PR URL still need to be recorded. |
 
 ## Remaining Release Gates
 
 1. Run `pnpm smoke:live-pr` and `pnpm smoke:live-issue-pr` against a disposable GitHub test repository using repository-scoped credentials, then record the PR URLs in release notes or verification artifacts.
 2. Perform a manual UI review for the de-AI checklist after the final feature set is frozen.
-3. Decide whether v1 requires Prisma/PostgreSQL runtime repositories or whether the current JSON/SQLite snapshot store is acceptable for the first release.
-4. Use the shared worker lock path for same-host multi-process deployments; use a database or queue backend before distributing workers across multiple hosts.
+3. Use the shared worker lock path for same-host multi-process deployments; use a database or queue backend before distributing workers across multiple hosts.

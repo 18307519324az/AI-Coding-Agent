@@ -5,7 +5,7 @@ AI Coding Agent is a developer-focused automation console for turning GitHub iss
 The repository is a pnpm TypeScript monorepo with:
 
 - `apps/web`: Next.js Web console with realistic task, approval, trace, log, diff, test, and PR states.
-- `apps/runner`: Fastify Agent Runner API with in-memory MVP storage and guarded command execution primitives.
+- `apps/runner`: Fastify Agent Runner API with durable JSON/SQLite storage and guarded command execution primitives.
 - `packages/shared`: Zod schemas and shared domain types.
 - `packages/agent-core`: state machine, command allowlist, log redaction, GitHub URL parsing, plan output, and PR summary helpers.
 - `.agents/skills`: repository-level Codex skills matching the PRD workflows.
@@ -60,8 +60,11 @@ DATABASE_URL=file:./.runner-data/dev.db
 RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
 RUNNER_JOB_MODE=inline # set to queued to enqueue plan generation jobs
 RUNNER_JOB_WORKER_INTERVAL_MS=1000
+RUNNER_JOB_WORKER_CONCURRENCY=1
 RUNNER_JOB_WORKER_LOCK_FILE=.runner-data/job-worker.lock
 RUNNER_JOB_WORKER_LOCK_STALE_MS=300000
+RUNNER_JOB_MAX_ATTEMPTS=3
+RUNNER_JOB_RETRY_BACKOFF_MS=1000
 RUNNER_WORKSPACE_RETENTION_HOURS=168
 RUNNER_WORKSPACE_CLEANUP_INTERVAL_MS=3600000
 RUNNER_WORKSPACE_CLEANUP=enabled # set to disabled to stop background cleanup
@@ -105,6 +108,8 @@ The default implementation keeps a deterministic mock flow for product iteration
 In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and the runner entrypoint starts a non-overlapping worker that processes the next queued job on `RUNNER_JOB_WORKER_INTERVAL_MS`. `POST /api/jobs/process-next` remains available for operational retries and local debugging.
 
 The runner also starts a workspace cleanup worker by default. It removes only terminal task directories under `WORKSPACE_ROOT` after the retention window, and `POST /api/workspaces/cleanup` can trigger the same cleanup pass manually.
+
+The first-release backend is intentionally scoped to a single runner host with durable JSON or SQLite snapshot storage. See `docs/RELEASE_DECISIONS.md` for the storage and queue boundary before planning PostgreSQL, Redis, or BullMQ work.
 
 ## Live PR Smoke
 

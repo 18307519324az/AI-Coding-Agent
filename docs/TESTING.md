@@ -59,7 +59,7 @@ Covered in `apps/runner/test`:
 
 Next runner tests should cover:
 
-- Multi-process queue coordination if worker and API are split across deployments.
+- Database or queue-backed claim leasing before distributing workers across multiple hosts.
 
 ## E2E Tests
 

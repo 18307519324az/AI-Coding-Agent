@@ -73,7 +73,7 @@ Actions:
 
 ## Store Selection
 
-Default local development uses `RUNNER_STORE_FILE=.runner-data/store.json`.
+Default local development uses `RUNNER_STORE_FILE=.runner-data/store.json`. First-release staging should use `RUNNER_SQLITE_FILE` or `DATABASE_URL=file:...` on durable storage; PostgreSQL, Redis, and BullMQ are reserved for a later multi-host runner milestone.
 
 For SQLite persistence:
 
@@ -93,6 +93,7 @@ Actions:
 - Keep `.runner-data/` out of git.
 - Back up the SQLite file before manual schema experiments.
 - Prefer a fresh database for integration tests that mutate tasks.
+- Read `docs/RELEASE_DECISIONS.md` before changing the store or queue backend assumptions.
 
 ## Job Queue Mode
 

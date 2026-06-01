@@ -67,6 +67,8 @@ When workspace cleanup is enabled, terminal task directories under `WORKSPACE_RO
 
 Mount `RUNNER_ARTIFACT_DIR` on durable storage if Playwright reports and screenshots must survive runner restarts or redeploys.
 
+The first-release storage boundary is single-host Runner deployment with durable JSON or SQLite snapshot persistence. Use a shared `RUNNER_JOB_WORKER_LOCK_FILE` when more than one runner process runs on that host. Do not distribute workers across multiple hosts until persistence and queue claiming move to a transactional database or queue backend; see `docs/RELEASE_DECISIONS.md`.
+
 ## Staging With Docker Compose
 
 The repository includes a staging compose stack for a self-hosted VM or container host.
