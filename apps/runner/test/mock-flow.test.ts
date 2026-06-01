@@ -3,6 +3,32 @@ import { approvePlanFlow, approvePrFlow, createTaskFlow } from "../src/mock-flow
 import { createStore, listTaskApprovals } from "../src/store";
 
 describe("mock task flow", () => {
+  it("fails the task when plan generation fails", async () => {
+    const store = createStore();
+    const task = await createTaskFlow(store, {
+      repositoryUrl: "https://github.com/acme/customer-portal",
+      title: "Fix login button",
+      prompt: "The login button does not respond when clicked.",
+      branchPrefix: "agent",
+      allowDependencyInstall: false,
+      allowCreatePr: false
+    }, {
+      planGenerator: async () => {
+        throw new Error("model unavailable");
+      }
+    });
+
+    expect(task.status).toBe("FAILED_CONTEXT");
+    expect(store.logs.get(task.id)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          phase: "FAILED_CONTEXT",
+          message: "model unavailable"
+        })
+      ])
+    );
+  });
+
   it("uses the live GitHub PR creator only when live mode is enabled", async () => {
     const previousMode = process.env.GITHUB_PR_MODE;
     process.env.GITHUB_PR_MODE = "live";

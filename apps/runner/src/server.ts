@@ -18,6 +18,7 @@ import {
   createTaskFlow,
   type BranchPublisher,
   type CommandRunner,
+  type PlanGenerator,
   type ProjectAnalyzer,
   type PullRequestCreator,
   type RepositoryCloner
@@ -37,6 +38,7 @@ export type ServerOptions = {
   workspaceExecution?: boolean;
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
+  planGenerator?: PlanGenerator;
   commandRunner?: CommandRunner;
   branchPublisher?: BranchPublisher;
   pullRequestCreator?: PullRequestCreator;
@@ -81,7 +83,8 @@ export function createServer(store: RunnerStore = createStore(), options: Server
       const task = await createTaskFlow(store, resolvedRequest, {
         workspaceExecution,
         repositoryCloner: options.repositoryCloner,
-        projectAnalyzer: options.projectAnalyzer
+        projectAnalyzer: options.projectAnalyzer,
+        planGenerator: options.planGenerator
       });
       return reply.status(201).send({ taskId: task.id, status: task.status });
     } catch (error) {

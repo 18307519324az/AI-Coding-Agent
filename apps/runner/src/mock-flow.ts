@@ -1,6 +1,5 @@
 import {
   assertTransition,
-  createInitialPlan,
   createSelfReview,
   generatePullRequestBody,
   parseGitHubRepositoryUrl
@@ -20,6 +19,7 @@ import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { createPullRequest, type CreatePullRequestInput } from "./github-service";
 import { publishBranch, type BranchPublisher } from "./git-publisher";
+import { createPlanGeneratorFromEnv, type PlanGenerator } from "./model-service";
 import { analyzeProject } from "./project-analyzer";
 import { cloneRepository } from "./workspace";
 
@@ -34,6 +34,7 @@ export type TaskFlowOptions = {
   workspaceExecution?: boolean;
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
+  planGenerator?: PlanGenerator;
 };
 
 export type ApprovePlanFlowOptions = {
@@ -47,7 +48,7 @@ export type ApprovePrFlowOptions = {
   pullRequestCreator?: PullRequestCreator;
 };
 
-export type { BranchPublisher, CommandRunner };
+export type { BranchPublisher, CommandRunner, PlanGenerator };
 
 type VerificationResults = {
   unit: TestResult[];
@@ -340,14 +341,28 @@ export async function createTaskFlow(
     }
   }));
 
+  let plan;
+  try {
+    plan = await (options.planGenerator ?? createPlanGeneratorFromEnv())({
+      title: task.title,
+      prompt: task.prompt,
+      issueUrl: task.issueUrl,
+      projectKind: projectContext.projectKind,
+      projectContext
+    });
+  } catch (error) {
+    task = saveTask(store, setStatus(task, "FAILED_CONTEXT"));
+    appendLog(store, createRunLog({
+      taskId: task.id,
+      level: "error",
+      phase: "FAILED_CONTEXT",
+      message: getErrorMessage(error, "Failed to generate task plan.")
+    }));
+    return task;
+  }
+
   task = setStatus(task, "PLAN_GENERATED");
-  task.plan = createInitialPlan({
-    title: task.title,
-    prompt: task.prompt,
-    issueUrl: task.issueUrl,
-    projectKind: projectContext.projectKind,
-    projectContext
-  });
+  task.plan = plan;
 
   task = setStatus(task, "WAITING_FOR_PLAN_APPROVAL");
   const approval: Approval = {

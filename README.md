@@ -46,6 +46,8 @@ Runner variables:
 ```bash
 GITHUB_TOKEN=...
 OPENAI_API_KEY=...
+OPENAI_AGENT_MODE=deterministic # set to live to generate plans through OpenAI Responses API
+OPENAI_MODEL=gpt-5.2
 WORKSPACE_ROOT=.workspaces
 RUNNER_STORE_FILE=.runner-data/store.json
 RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
@@ -73,4 +75,4 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 6. User approves PR creation.
 7. In live PR mode, Runner creates a branch, commits the approved workspace diff, pushes the branch through the command allowlist, creates a draft PR, and records the PR URL. In default mode, PR creation remains simulated.
 
-The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, and run allowlisted verification commands after plan approval. Real OpenAI patch generation remains isolated behind the runner and agent-core boundaries so it can be added without changing the Web console contract.
+The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `OPENAI_AGENT_MODE=live` to generate task plans through the OpenAI Responses API, and set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, and run allowlisted verification commands after plan approval. Real OpenAI patch generation remains isolated behind the runner and agent-core boundaries so it can be added without changing the Web console contract.
