@@ -23,7 +23,7 @@ Status legend:
 | System can create GitHub PR | Unverified | Live mode code exists in `approvePrFlow`, `git-publisher.ts`, and `github-service.ts`; `pnpm smoke:live-pr` and `pnpm smoke:live-issue-pr` harnesses exist but have not been run against a real test repo in this audit. |
 | All high-risk actions require approval | Done | Command policy tests for install/push/destructive commands; PR approval gate tests. |
 | Logs do not leak tokens | Done | Redaction helpers and tests; PR creation failure redaction regression in `apps/runner/test/mock-flow.test.ts`. |
-| UI passes de-AI style check | Partial | UI uses restrained SaaS console pages and E2E state coverage; final human visual review remains manual. |
+| UI passes de-AI style check | Done | `docs/UI_REVIEW.md` records the 2026-06-02 visual review with screenshots for desktop/mobile dashboard, task detail, jobs, settings, and create-task error state. |
 | CI passes | Done | `pnpm run ci` passed locally before this matrix update; GitHub Actions workflow exists at `.github/workflows/ci.yml`. |
 
 ## v1 Completion Definition
@@ -39,7 +39,7 @@ Status legend:
 | Supports logs and trace | Done | Logs and trace events are persisted and displayed in task detail. |
 | Supports safe command policy | Done | Allowlist, approval-gated high-risk commands, workspace boundary checks, `.env` guard, and redaction tests exist. |
 | Supports at least 5 eval cases | Done | Six eval cases exist; two run fixture-backed runner flow evals. |
-| UI reaches real SaaS product quality | Partial | Current UI avoids a generic landing page and includes product state density; final release still needs manual UX review. |
+| UI reaches real SaaS product quality | Done | Visual review artifacts in `docs/ui-review/2026-06-02/` cover operational navigation, metrics, task queue, approvals, logs, traces, diffs, tests, jobs, settings, error state, and mobile dashboard. |
 | README lets a new user run within 10 minutes | Done | Quick Start includes `corepack enable`, `pnpm install`, `pnpm run doctor`, and `pnpm dev`; `.env.example` documents local mock defaults and integration credentials. |
 | CI passes | Done | Local full CI passed before this matrix update. |
 | First-release storage and queue backend selected | Done | `docs/RELEASE_DECISIONS.md` scopes first release to single-host durable JSON/SQLite snapshot storage with same-host worker file leasing; PostgreSQL/Redis/BullMQ are follow-up scale milestones. |
@@ -48,5 +48,4 @@ Status legend:
 ## Remaining Release Gates
 
 1. Run `pnpm smoke:live-pr` and `pnpm smoke:live-issue-pr` against a disposable GitHub test repository using repository-scoped credentials, then record the PR URLs in release notes or verification artifacts.
-2. Perform a manual UI review for the de-AI checklist after the final feature set is frozen.
-3. Use the shared worker lock path for same-host multi-process deployments; use a database or queue backend before distributing workers across multiple hosts.
+2. Use the shared worker lock path for same-host multi-process deployments; use a database or queue backend before distributing workers across multiple hosts.

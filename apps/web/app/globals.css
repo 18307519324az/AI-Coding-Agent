@@ -278,6 +278,7 @@ h3 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  min-width: 0;
 }
 
 .panel {
@@ -306,6 +307,7 @@ h3 {
 }
 
 .table-wrap {
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -554,5 +556,22 @@ tr:last-child td {
 
   .page-header {
     display: grid;
+  }
+}
+
+@media (max-width: 640px) {
+  .content,
+  .auth-content {
+    padding: 18px;
+  }
+
+  .sidebar {
+    padding: 16px 12px;
+  }
+
+  .empty-state {
+    align-items: flex-start;
+    display: grid;
+    gap: 12px;
   }
 }
