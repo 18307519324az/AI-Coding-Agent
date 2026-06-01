@@ -11,6 +11,7 @@ Symptoms:
 Checks:
 
 ```bash
+pnpm run doctor
 curl http://localhost:8787/health
 curl -H "Authorization: Bearer $RUNNER_API_KEY" http://localhost:8787/api/metrics
 pnpm --filter runner dev

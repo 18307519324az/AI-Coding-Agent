@@ -40,7 +40,7 @@ Status legend:
 | Supports safe command policy | Done | Allowlist, approval-gated high-risk commands, workspace boundary checks, `.env` guard, and redaction tests exist. |
 | Supports at least 5 eval cases | Done | Six eval cases exist; two run fixture-backed runner flow evals. |
 | UI reaches real SaaS product quality | Partial | Current UI avoids a generic landing page and includes product state density; final release still needs manual UX review. |
-| README lets a new user run within 10 minutes | Partial | Quick start and staging docs exist; external prerequisites such as Node/Corepack/browser setup can still vary by host. |
+| README lets a new user run within 10 minutes | Done | Quick Start includes `corepack enable`, `pnpm install`, `pnpm run doctor`, and `pnpm dev`; `.env.example` documents local mock defaults and integration credentials. |
 | CI passes | Done | Local full CI passed before this matrix update. |
 | At least one real test repository PR created successfully | Unverified | `pnpm smoke:live-pr` is the repeatable harness for this proof; a real run and PR URL still need to be recorded. |
 

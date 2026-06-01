@@ -15,12 +15,15 @@ The repository is a pnpm TypeScript monorepo with:
 ```bash
 corepack enable
 pnpm install
+pnpm run doctor
 pnpm dev
 ```
 
 Open the Web console at `http://localhost:3000`.
 
 The runner starts at `http://localhost:8787`.
+
+For integration testing, copy `.env.example` to `.env` and fill only the credentials needed for that run. The default mock mode works without secrets.
 
 ## Checks
 

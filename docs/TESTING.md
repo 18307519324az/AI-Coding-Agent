@@ -5,6 +5,7 @@ The project uses layered tests so Agent behavior, runner safety, and Web UI flow
 ## Commands
 
 ```bash
+pnpm run doctor
 pnpm lint
 pnpm typecheck
 pnpm test
