@@ -48,6 +48,7 @@ GITHUB_TOKEN=...
 OPENAI_API_KEY=...
 WORKSPACE_ROOT=.workspaces
 RUNNER_STORE_FILE=.runner-data/store.json
+RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
 GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
@@ -72,4 +73,4 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 6. User approves PR creation.
 7. Runner creates or simulates the PR and records the PR URL.
 
-The current implementation includes a complete mock/in-memory flow suitable for product iteration, unit tests, and UI verification. Real OpenAI model execution and persistent job storage are isolated behind the runner and agent-core boundaries so they can be added without changing the Web console contract.
+The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, and run allowlisted verification commands after plan approval. Real OpenAI patch generation and full branch push automation are isolated behind the runner and agent-core boundaries so they can be added without changing the Web console contract.

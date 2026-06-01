@@ -12,7 +12,15 @@ import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { resolveCreateTaskRequest, type IssueFetcher } from "./issue-service";
-import { approvePlanFlow, approvePrFlow, createTaskFlow } from "./mock-flow";
+import {
+  approvePlanFlow,
+  approvePrFlow,
+  createTaskFlow,
+  type CommandRunner,
+  type ProjectAnalyzer,
+  type PullRequestCreator,
+  type RepositoryCloner
+} from "./mock-flow";
 import { createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
 
 const ParamsSchema = z.object({
@@ -25,7 +33,22 @@ const ApprovalParamsSchema = ParamsSchema.extend({
 
 export type ServerOptions = {
   issueFetcher?: IssueFetcher;
+  workspaceExecution?: boolean;
+  repositoryCloner?: RepositoryCloner;
+  projectAnalyzer?: ProjectAnalyzer;
+  commandRunner?: CommandRunner;
+  pullRequestCreator?: PullRequestCreator;
 };
+
+function shouldUseWorkspaceExecution(options: ServerOptions): boolean {
+  return options.workspaceExecution ??
+    Boolean(
+      options.repositoryCloner ||
+      options.projectAnalyzer ||
+      options.commandRunner ||
+      process.env.RUNNER_EXECUTION_MODE === "workspace"
+    );
+}
 
 export function createServer(store: RunnerStore = createStore(), options: ServerOptions = {}) {
   const app = Fastify({
@@ -52,7 +75,12 @@ export function createServer(store: RunnerStore = createStore(), options: Server
 
     try {
       const resolvedRequest = await resolveCreateTaskRequest(parsed.data, options.issueFetcher);
-      const task = createTaskFlow(store, resolvedRequest);
+      const workspaceExecution = shouldUseWorkspaceExecution(options);
+      const task = await createTaskFlow(store, resolvedRequest, {
+        workspaceExecution,
+        repositoryCloner: options.repositoryCloner,
+        projectAnalyzer: options.projectAnalyzer
+      });
       return reply.status(201).send({ taskId: task.id, status: task.status });
     } catch (error) {
       return reply.status(400).send({
@@ -166,10 +194,13 @@ export function createServer(store: RunnerStore = createStore(), options: Server
     upsertApproval(store, resolved);
 
     if (approval.type === "PLAN") {
-      return approvePlanFlow(store, task);
+      return approvePlanFlow(store, task, {
+        executeCommands: shouldUseWorkspaceExecution(options),
+        commandRunner: options.commandRunner
+      });
     }
     if (approval.type === "CREATE_PR") {
-      return approvePrFlow(store, task, resolved);
+      return approvePrFlow(store, task, resolved, options.pullRequestCreator);
     }
 
     return store.tasks.get(taskId);

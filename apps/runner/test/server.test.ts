@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
+import type { ProjectContext } from "@ai-coding-agent/shared";
 import { createServer } from "../src/server";
+
+function createWorkspaceContext(rootPath: string): ProjectContext {
+  return {
+    rootPath,
+    packageManager: "pnpm",
+    projectKind: "node",
+    hasFrontend: false,
+    scripts: {
+      lint: "eslint .",
+      typecheck: "tsc --noEmit",
+      test: "vitest run",
+      "test:e2e": "playwright test"
+    },
+    recommendedCommands: {
+      install: "pnpm install",
+      lint: "pnpm lint",
+      typecheck: "pnpm typecheck",
+      test: "pnpm test",
+      e2e: "pnpm test:e2e"
+    },
+    relevantFiles: ["package.json", "src/index.ts", "test/index.test.ts"]
+  };
+}
 
 describe("runner API", () => {
   it("connects a GitHub repository", async () => {
@@ -40,6 +64,196 @@ describe("runner API", () => {
     expect(response.json()).toMatchObject({
       status: "WAITING_FOR_PLAN_APPROVAL"
     });
+  });
+
+  it("can create a task using workspace clone and project analysis providers", async () => {
+    const clonedInputs: unknown[] = [];
+    const app = createServer(undefined, {
+      workspaceExecution: true,
+      repositoryCloner: async (input) => {
+        clonedInputs.push(input);
+        return `D:/runner-workspaces/${input.taskId}/repo`;
+      },
+      projectAnalyzer: async (rootPath) => createWorkspaceContext(rootPath)
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix API validation",
+        prompt: "The API should return a validation error for bad input.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      status: "WAITING_FOR_PLAN_APPROVAL"
+    });
+    expect(clonedInputs).toEqual([
+      expect.objectContaining({
+        repositoryUrl: "https://github.com/example/repo"
+      })
+    ]);
+
+    const { taskId } = response.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const body = detail.json<{
+      logs: Array<{ phase: string }>;
+      projectContext: ProjectContext;
+    }>();
+
+    expect(body.logs.map((log) => log.phase)).toEqual(
+      expect.arrayContaining(["REPO_CLONING", "CONTEXT_ANALYZING", "WAITING_FOR_PLAN_APPROVAL"])
+    );
+    expect(body.projectContext).toMatchObject({
+      rootPath: `D:/runner-workspaces/${taskId}/repo`,
+      packageManager: "pnpm",
+      projectKind: "node",
+      recommendedCommands: {
+        lint: "pnpm lint",
+        typecheck: "pnpm typecheck",
+        test: "pnpm test"
+      }
+    });
+  });
+
+  it("runs workspace verification commands after plan approval", async () => {
+    const seenCommands: string[] = [];
+    const app = createServer(undefined, {
+      workspaceExecution: true,
+      repositoryCloner: async (input) => `D:/runner-workspaces/${input.taskId}/repo`,
+      projectAnalyzer: async (rootPath) => createWorkspaceContext(rootPath),
+      commandRunner: async (input) => {
+        seenCommands.push(input.command);
+        return {
+          command: input.command,
+          status: "PASSED",
+          output: input.command === "git diff"
+            ? "diff --git a/src/index.ts b/src/index.ts\n+export const fixed = true;\n"
+            : `ran ${input.command}`,
+          durationMs: 5
+        };
+      }
+    });
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix API validation",
+        prompt: "The API should return a validation error for bad input.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+    const { taskId } = created.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "PLAN"
+    );
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/approve`
+    });
+
+    expect(approved.statusCode).toBe(200);
+    expect(approved.json()).toMatchObject({
+      status: "WAITING_FOR_PR_APPROVAL"
+    });
+    expect(seenCommands).toEqual(["git diff", "pnpm lint", "pnpm typecheck", "pnpm test", "pnpm test:e2e"]);
+
+    const afterApproval = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const body = afterApproval.json<{
+      diff: { filesChanged: string[] };
+      tests: Array<{ command: string; output: string; status: string }>;
+    }>();
+
+    expect(body.diff.filesChanged).toEqual(["src/index.ts"]);
+    expect(body.tests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: "pnpm lint", output: "ran pnpm lint", status: "PASSED" }),
+        expect.objectContaining({ command: "pnpm typecheck", output: "ran pnpm typecheck", status: "PASSED" }),
+        expect.objectContaining({ command: "pnpm test", output: "ran pnpm test", status: "PASSED" }),
+        expect.objectContaining({ command: "pnpm test:e2e", output: "ran pnpm test:e2e", status: "PASSED" })
+      ])
+    );
+  });
+
+  it("stops a workspace task when a verification command fails", async () => {
+    const app = createServer(undefined, {
+      workspaceExecution: true,
+      repositoryCloner: async (input) => `D:/runner-workspaces/${input.taskId}/repo`,
+      projectAnalyzer: async (rootPath) => createWorkspaceContext(rootPath),
+      commandRunner: async (input) => ({
+        command: input.command,
+        status: input.command === "pnpm test" ? "FAILED" : "PASSED",
+        output: input.command === "pnpm test" ? "unit test failed" : "",
+        durationMs: 5
+      })
+    });
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix API validation",
+        prompt: "The API should return a validation error for bad input.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+    const { taskId } = created.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const planApproval = detail.json<{ approvals: Array<{ id: string; type: string }> }>().approvals.find(
+      (approval) => approval.type === "PLAN"
+    );
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/tasks/${taskId}/approvals/${planApproval?.id}/approve`
+    });
+
+    expect(approved.statusCode).toBe(200);
+    expect(approved.json()).toMatchObject({
+      status: "FAILED_TEST"
+    });
+
+    const afterApproval = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const body = afterApproval.json<{
+      approvals: Array<{ type: string; status: string }>;
+      tests: Array<{ command: string; status: string; output: string }>;
+    }>();
+
+    expect(body.approvals).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: "CREATE_PR", status: "PENDING" })])
+    );
+    expect(body.tests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ command: "pnpm test", status: "FAILED", output: "unit test failed" })
+      ])
+    );
   });
 
   it("creates a task from a GitHub issue URL when title and prompt are omitted", async () => {

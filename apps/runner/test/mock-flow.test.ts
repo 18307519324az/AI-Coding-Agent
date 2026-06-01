@@ -8,7 +8,7 @@ describe("mock task flow", () => {
     process.env.GITHUB_PR_MODE = "live";
     try {
       const store = createStore();
-      const task = createTaskFlow(store, {
+      const task = await createTaskFlow(store, {
         repositoryUrl: "https://github.com/acme/customer-portal",
         title: "Fix login button",
         prompt: "The login button does not respond when clicked.",
@@ -16,7 +16,7 @@ describe("mock task flow", () => {
         allowDependencyInstall: false,
         allowCreatePr: false
       });
-      const readyForPr = approvePlanFlow(store, task);
+      const readyForPr = await approvePlanFlow(store, task);
       const approval = listTaskApprovals(store, readyForPr.id).find((item) => item.type === "CREATE_PR");
       const seenInputs: unknown[] = [];
 

@@ -40,6 +40,29 @@ Actions:
 - Re-run the specific failing test when safe.
 - Do not approve PR creation until failures are resolved or explicitly accepted.
 
+## Workspace Execution Mode
+
+Use `RUNNER_EXECUTION_MODE=workspace` only when the runner host has:
+
+- Network access to GitHub.
+- A writable `WORKSPACE_ROOT`.
+- The target package manager available on `PATH`.
+- Approval controls enabled for dependency install, push, and PR creation.
+
+Checks:
+
+```bash
+curl http://localhost:8787/health
+git --version
+pnpm --version
+```
+
+Actions:
+
+- Confirm each task creates a directory under `.workspaces/<task_id>/repo`.
+- Confirm logs show `REPO_CLONING` before `CONTEXT_ANALYZING`.
+- If verification fails, inspect stored test output before retrying or approving PR creation.
+
 ## PR Creation Failed
 
 Checks:
@@ -57,4 +80,3 @@ Actions:
 - Search logs for the token fingerprint.
 - Confirm redaction tests pass.
 - Add a regression test for the leak pattern.
-

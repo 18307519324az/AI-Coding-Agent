@@ -50,7 +50,12 @@ The runner exposes:
 - `POST /api/tasks/:taskId/approvals/:approvalId/reject`
 - `POST /api/tasks/:taskId/create-pr`
 
-The MVP store is in-memory. The Prisma schema documents the SQLite persistence shape for the next implementation step.
+The runner can operate in two execution modes:
+
+- `mock`: deterministic task flow for UI iteration, local tests, and demos without cloning external repositories.
+- `workspace`: clones the target GitHub repository into a task-scoped workspace, analyzes `package.json` and relevant project files, then runs allowlisted verification commands after plan approval.
+
+The MVP store is in-memory by default and can be file-backed with `RUNNER_STORE_FILE`. The Prisma schema documents the SQLite persistence shape for a fuller database-backed implementation.
 
 ### Agent Core
 
@@ -108,7 +113,6 @@ This keeps the product auditable and prevents prompt text from becoming executio
 - Replace in-memory store with SQLite Prisma repositories.
 - Add OpenAI Responses API or Agents SDK planner/executor behind `packages/agent-core`.
 - Add a persistent job queue for long-running tasks.
-- Wire runner APIs into Web through TanStack Query.
-- Replace mock PR creation with Octokit after approval.
+- Add model-driven patch application before workspace verification.
+- Add branch commit and push before live Octokit PR creation.
 - Add workspace cleanup jobs.
-

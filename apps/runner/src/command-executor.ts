@@ -9,7 +9,49 @@ export type CommandExecutionResult = {
 };
 
 function splitCommand(command: string): [string, string[]] {
-  const [file, ...args] = command.split(" ");
+  const parts: string[] = [];
+  let current = "";
+  let quote: "'" | "\"" | undefined;
+
+  for (const char of command) {
+    if (quote) {
+      if (char === quote) {
+        quote = undefined;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+
+    if (char === "'" || char === "\"") {
+      quote = char;
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      if (current) {
+        parts.push(current);
+        current = "";
+      }
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (quote) {
+    throw new Error("Command contains an unterminated quote.");
+  }
+
+  if (current) {
+    parts.push(current);
+  }
+
+  const [file, ...args] = parts;
+  if (!file) {
+    throw new Error("Command is empty.");
+  }
+
   return [file, args];
 }
 
@@ -39,8 +81,8 @@ export async function executeAllowedCommand(input: {
     };
   }
 
-  const [file, args] = splitCommand(decision.command);
   try {
+    const [file, args] = splitCommand(decision.command);
     const result = await execa(file, args, {
       cwd: input.cwd,
       all: true,
@@ -62,4 +104,3 @@ export async function executeAllowedCommand(input: {
     };
   }
 }
-
