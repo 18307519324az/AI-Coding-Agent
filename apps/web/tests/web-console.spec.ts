@@ -46,6 +46,25 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
   await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
 });
 
+test("task detail approval controls execute runner approval flow", async ({ page }) => {
+  await page.goto("/tasks/new");
+
+  await page.getByLabel("Repository URL").fill("https://github.com/acme/approval-flow");
+  await page.getByLabel("Task title").fill("Fix approval handoff");
+  await page.getByLabel("Task prompt").fill("The save button should stay disabled while the request is running.");
+  await page.getByRole("button", { name: "Create agent task" }).click();
+  await page.getByRole("link", { name: "Open task detail" }).click();
+
+  await expect(page.getByRole("button", { name: "Approve plan and start implementation" })).toBeVisible();
+  await page.getByRole("button", { name: "Approve plan and start implementation" }).click();
+  await expect(page.getByText("PLAN approved. Refreshing task state.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Approve PR" }).click();
+  await expect(page.getByText("CREATE PR approved. Refreshing task state.")).toBeVisible();
+  await expect(page.locator("header").getByText("COMPLETED")).toBeVisible();
+});
+
 test("repository form saves through the runner", async ({ page }) => {
   await delayRunnerPost(page, "**/api/runner/repositories");
   await page.goto("/repositories/new");

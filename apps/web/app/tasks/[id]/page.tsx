@@ -2,7 +2,69 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StateRail } from "@/components/state-rail";
 import { StatusBadge } from "@/components/status-badge";
-import { getTaskDetail } from "@/lib/runner-api";
+import { TaskApprovalPanel } from "@/components/task-approval-panel";
+import { getTaskDetail, type TaskDetail } from "@/lib/runner-api";
+
+function buildPrBody(task: TaskDetail): string {
+  const changedFiles = task.diff?.filesChanged.length
+    ? task.diff.filesChanged.map((file) => `- ${file}`).join("\n")
+    : "- No file changes recorded";
+  const tests = task.tests.length
+    ? task.tests.map((test) => `- ${test.command}: ${test.status}`).join("\n")
+    : "- No tests recorded";
+  const risks = task.selfReview?.risks.length
+    ? task.selfReview.risks.map((risk) => `- ${risk}`).join("\n")
+    : task.plan?.risks.length
+      ? task.plan.risks.map((risk) => `- ${risk}`).join("\n")
+      : "- No known risks";
+
+  return [
+    "## Summary",
+    task.selfReview?.summary ?? task.plan?.summary ?? task.title,
+    "",
+    "## Changed Files",
+    changedFiles,
+    "",
+    "## Tests",
+    tests,
+    "",
+    "## Risk",
+    risks,
+    "",
+    "## Notes for Reviewer",
+    task.selfReview?.recommendation ?? "Review the diff and test output before merging."
+  ].join("\n");
+}
+
+function getPrDraftState(task: TaskDetail) {
+  const hasPendingApproval = task.approvals.some(
+    (approval) => approval.type === "CREATE_PR" && approval.status === "PENDING"
+  );
+  const hasPassingTests = task.tests.length > 0 && task.tests.every((test) => test.status === "PASSED");
+  const canRequest = Boolean(task.diff && task.selfReview && hasPassingTests && !task.prUrl && !hasPendingApproval);
+  let disabledReason = "Diff, passing tests, and self-review are required before requesting PR approval.";
+
+  if (task.prUrl) {
+    disabledReason = "A PR has already been created for this task.";
+  } else if (hasPendingApproval) {
+    disabledReason = "Review the pending CREATE PR approval above.";
+  } else if (!task.diff) {
+    disabledReason = "Implementation diff is not available yet.";
+  } else if (!task.selfReview) {
+    disabledReason = "Self-review is still pending.";
+  } else if (!hasPassingTests) {
+    disabledReason = "All recorded tests must pass before PR approval can be requested.";
+  }
+
+  return {
+    title: task.title,
+    body: buildPrBody(task),
+    canRequest,
+    disabledReason,
+    hasPendingApproval,
+    prUrl: task.prUrl
+  };
+}
 
 export default async function TaskDetailPage({
   params
@@ -19,6 +81,11 @@ export default async function TaskDetailPage({
   const taskApprovals = task.approvals;
   const taskLogs = task.logs;
   const taskTests = task.tests;
+  const approvalViews = taskApprovals.map((approval) => ({
+    ...approval,
+    createdAt: approval.createdAt.toISOString(),
+    resolvedAt: approval.resolvedAt?.toISOString()
+  }));
 
   return (
     <>
@@ -44,30 +111,7 @@ export default async function TaskDetailPage({
           <StateRail status={task.status} />
         </section>
 
-        <section className="panel">
-          <h2>Approvals</h2>
-          {taskApprovals.length === 0 ? (
-            <div className="empty-state">
-              <div>
-                <strong>No approval waiting</strong>
-                <p className="muted small">The runner will pause here before high-risk operations.</p>
-              </div>
-            </div>
-          ) : (
-            <div className="timeline">
-              {taskApprovals.map((approval) => (
-                <div className="timeline-item" key={approval.id}>
-                  <strong>{approval.type.replaceAll("_", " ")}</strong>
-                  <span className="muted small">{approval.status}</span>
-                  <div className="toolbar" style={{ marginTop: 10 }}>
-                    <button className="button">Approve {approval.type === "CREATE_PR" ? "PR" : "plan"}</button>
-                    <button className="button danger">Reject</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <TaskApprovalPanel approvals={approvalViews} prDraft={getPrDraftState(task)} taskId={task.id} />
       </div>
 
       <div className="grid two" style={{ marginTop: 16 }}>

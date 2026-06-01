@@ -351,6 +351,17 @@ tr:last-child td {
   margin-bottom: 3px;
 }
 
+.approval-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.divider {
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
 .diff {
   background: #101820;
   border-radius: 6px;
@@ -394,6 +405,15 @@ tr:last-child td {
 .field textarea {
   min-height: 150px;
   resize: vertical;
+}
+
+.compact-form {
+  gap: 12px;
+  max-width: none;
+}
+
+.compact-field textarea {
+  min-height: 92px;
 }
 
 .help,
@@ -497,4 +517,3 @@ tr:last-child td {
     display: grid;
   }
 }
-

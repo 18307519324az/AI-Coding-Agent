@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export function CreateTaskForm() {
@@ -116,7 +117,10 @@ export function CreateTaskForm() {
 
       {error ? <span className="error-text">{error}</span> : null}
       {createdTaskId ? (
-        <span className="success-text">Task accepted. Plan generation is queued for {createdTaskId}.</span>
+        <span className="success-text">
+          Task accepted. Plan generation is queued for {createdTaskId}.{" "}
+          <Link href={`/tasks/${createdTaskId}`}>Open task detail</Link>
+        </span>
       ) : null}
 
       <div className="toolbar">
