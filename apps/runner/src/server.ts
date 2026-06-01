@@ -11,6 +11,7 @@ import { z } from "zod";
 import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
+import { resolveCreateTaskRequest, type IssueFetcher } from "./issue-service";
 import { approvePlanFlow, approvePrFlow, createTaskFlow } from "./mock-flow";
 import { createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
 
@@ -22,7 +23,11 @@ const ApprovalParamsSchema = ParamsSchema.extend({
   approvalId: z.string()
 });
 
-export function createServer(store: RunnerStore = createStore()) {
+export type ServerOptions = {
+  issueFetcher?: IssueFetcher;
+};
+
+export function createServer(store: RunnerStore = createStore(), options: ServerOptions = {}) {
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? "info",
@@ -46,7 +51,8 @@ export function createServer(store: RunnerStore = createStore()) {
     }
 
     try {
-      const task = createTaskFlow(store, parsed.data);
+      const resolvedRequest = await resolveCreateTaskRequest(parsed.data, options.issueFetcher);
+      const task = createTaskFlow(store, resolvedRequest);
       return reply.status(201).send({ taskId: task.id, status: task.status });
     } catch (error) {
       return reply.status(400).send({

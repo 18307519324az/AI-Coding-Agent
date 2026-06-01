@@ -157,15 +157,29 @@ export type TestResult = z.infer<typeof TestResultSchema>;
 
 export const CreateTaskRequestSchema = z.object({
   repositoryUrl: z.string().url(),
-  title: z.string().min(3),
-  prompt: z.string().min(10),
+  title: z.string().min(3).optional(),
+  prompt: z.string().min(10).optional(),
   issueUrl: z.string().url().optional(),
   branchPrefix: z.string().min(1).default("agent"),
   testCommandOverride: z.string().optional(),
   allowDependencyInstall: z.boolean().default(false),
   allowCreatePr: z.boolean().default(false)
+}).superRefine((request, context) => {
+  if (request.issueUrl || (request.title && request.prompt)) {
+    return;
+  }
+
+  context.addIssue({
+    code: z.ZodIssueCode.custom,
+    message: "Provide title and prompt, or provide an issueUrl the runner can read.",
+    path: ["issueUrl"]
+  });
 });
 export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
+export type ResolvedCreateTaskRequest = CreateTaskRequest & {
+  title: string;
+  prompt: string;
+};
 
 export const RejectApprovalRequestSchema = z.object({
   reason: z.string().min(3)

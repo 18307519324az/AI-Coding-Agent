@@ -42,6 +42,43 @@ describe("runner API", () => {
     });
   });
 
+  it("creates a task from a GitHub issue URL when title and prompt are omitted", async () => {
+    const app = createServer(undefined, {
+      issueFetcher: async () => ({
+        title: "Fix issue title from GitHub",
+        body: "The issue body becomes the task prompt.",
+        issueNumber: 42,
+        url: "https://github.com/example/repo/issues/42",
+        repositoryUrl: "https://github.com/example/repo"
+      })
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        issueUrl: "https://github.com/example/repo/issues/42",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+
+    expect(response.statusCode).toBe(201);
+    const { taskId } = response.json<{ taskId: string }>();
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+
+    expect(detail.json()).toMatchObject({
+      title: "Fix issue title from GitHub",
+      prompt: expect.stringContaining("The issue body becomes the task prompt."),
+      issueUrl: "https://github.com/example/repo/issues/42",
+      status: "WAITING_FOR_PLAN_APPROVAL"
+    });
+  });
+
   it("redacts tokens in stored logs", async () => {
     const app = createServer();
     const created = await app.inject({

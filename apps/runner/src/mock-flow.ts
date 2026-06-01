@@ -8,10 +8,10 @@ import {
 import type {
   AgentTask,
   Approval,
-  CreateTaskRequest,
   DiffSummary,
   ProjectContext,
   Repository,
+  ResolvedCreateTaskRequest,
   TestResult
 } from "@ai-coding-agent/shared";
 import { appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
@@ -31,7 +31,7 @@ function setStatus(task: AgentTask, status: AgentTask["status"]): AgentTask {
 
 function createInferredProjectContext(input: {
   taskId: string;
-  request: CreateTaskRequest;
+  request: ResolvedCreateTaskRequest;
   repository: Repository;
 }): ProjectContext {
   const text = `${input.request.title} ${input.request.prompt} ${input.repository.name}`.toLowerCase();
@@ -117,7 +117,7 @@ function createVerificationResults(task: AgentTask): {
   };
 }
 
-export function createTaskFlow(store: RunnerStore, request: CreateTaskRequest): AgentTask {
+export function createTaskFlow(store: RunnerStore, request: ResolvedCreateTaskRequest): AgentTask {
   const repoRef = parseGitHubRepositoryUrl(request.repositoryUrl);
   const repository: Repository = {
     id: createId("repo"),
