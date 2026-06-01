@@ -1,0 +1,108 @@
+name: Live GitHub Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/live-github-smoke.yml"
+      - "scripts/github-smoke-workflow.ts"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  live-smoke:
+    if: github.repository == '18307519324az/AI-Coding-Agent'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LIVE_PR_SMOKE_RESULT_FILE: .runner-data/live-pr-smoke-result.json
+      LIVE_PR_SMOKE_WORKSPACE_ROOT: .runner-data/live-pr-smoke-workspaces
+      LIVE_ISSUE_PR_SMOKE_RESULT_FILE: .runner-data/live-issue-pr-smoke-result.json
+      LIVE_ISSUE_PR_SMOKE_WORKSPACE_ROOT: .runner-data/live-issue-pr-smoke-workspaces
+      SMOKE_BASE_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+      SMOKE_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Configure smoke Git identity
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          basic_auth="$(printf "x-access-token:%s" "$GITHUB_TOKEN" | base64 -w0)"
+          git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $basic_auth"
+
+      - name: Run live PR smoke
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LIVE_PR_SMOKE_ALLOW_INSTALL: "1"
+          LIVE_PR_SMOKE_BASE_BRANCH: ${{ env.SMOKE_BASE_BRANCH }}
+          LIVE_PR_SMOKE_CONFIRM: create-draft-pr
+          LIVE_PR_SMOKE_REPOSITORY_URL: ${{ env.SMOKE_REPOSITORY_URL }}
+          LIVE_PR_SMOKE_REQUIRE_TESTS: "1"
+          LIVE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_PR_SMOKE_RESULT_FILE }}
+          LIVE_PR_SMOKE_TEST_COMMAND: pnpm test
+          LIVE_PR_SMOKE_WORKSPACE_ROOT: ${{ env.LIVE_PR_SMOKE_WORKSPACE_ROOT }}
+        run: pnpm smoke:live-pr
+
+      - name: Create smoke issue
+        id: smoke-issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm tsx scripts/github-smoke-workflow.ts create-issue
+
+      - name: Run live issue-to-PR smoke
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LIVE_ISSUE_PR_SMOKE_ALLOW_INSTALL: "1"
+          LIVE_ISSUE_PR_SMOKE_BASE_BRANCH: ${{ env.SMOKE_BASE_BRANCH }}
+          LIVE_ISSUE_PR_SMOKE_CONFIRM: create-draft-pr
+          LIVE_ISSUE_PR_SMOKE_ISSUE_URL: ${{ steps.smoke-issue.outputs.issue_url }}
+          LIVE_ISSUE_PR_SMOKE_REQUIRE_TESTS: "1"
+          LIVE_ISSUE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_ISSUE_PR_SMOKE_RESULT_FILE }}
+          LIVE_ISSUE_PR_SMOKE_TEST_COMMAND: pnpm test
+          LIVE_ISSUE_PR_SMOKE_WORKSPACE_ROOT: ${{ env.LIVE_ISSUE_PR_SMOKE_WORKSPACE_ROOT }}
+        run: pnpm smoke:live-issue-pr
+
+      - name: Record live smoke evidence
+        env:
+          LIVE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_PR_SMOKE_RESULT_FILE }}
+          LIVE_ISSUE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_ISSUE_PR_SMOKE_RESULT_FILE }}
+        run: pnpm tsx scripts/github-smoke-workflow.ts record-results
+
+      - name: Close smoke issue
+        if: always() && steps.smoke-issue.outputs.issue_number != ''
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SMOKE_ISSUE_NUMBER: ${{ steps.smoke-issue.outputs.issue_number }}
+        run: pnpm tsx scripts/github-smoke-workflow.ts close-issue
+
+      - name: Commit live smoke evidence
+        run: |
+          git add docs/verification/live-github-smoke
+          if git diff --cached --quiet; then
+            echo "No live smoke evidence changes to commit."
+          else
+            git commit -m "Record live GitHub smoke verification"
+            git push origin HEAD:"$SMOKE_BASE_BRANCH"
+          fi
