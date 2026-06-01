@@ -38,6 +38,13 @@ Do not put Runner credentials in `NEXT_PUBLIC_*` variables.
 
 All commands must go through `evaluateCommand`.
 
+The runner command executor also enforces runtime boundaries before spawning a process:
+
+- `cwd` must remain inside the declared task workspace root.
+- Repository commands do not inherit GitHub, OpenAI, runner API, token, password, or secret environment variables.
+- Command execution is blocked when the workspace root contains a secret `.env` file such as `.env`, `.env.local`, or `.env.production`.
+- Command output is redacted before it is returned or stored.
+
 Allowed without approval:
 
 - `pnpm lint`
@@ -90,7 +97,6 @@ Future hardening should add:
 - Per-task filesystem sandboxing.
 - Maximum workspace size.
 - Timeouts for every command.
-- Environment variable allowlist.
 - Network policy controls for runner jobs.
 
 ## Prompt Injection

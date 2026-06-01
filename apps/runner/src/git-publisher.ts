@@ -24,6 +24,7 @@ async function runPublishStep(input: {
   const result = await input.commandRunner({
     command: input.command,
     cwd: input.cwd,
+    workspaceRoot: input.cwd,
     approvedHighRisk: input.approvedHighRisk
   });
 

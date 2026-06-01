@@ -48,13 +48,13 @@ Covered in `apps/runner/test`:
 - OpenAI model adapter response validation.
 - Model-generated implementation file application.
 - Git branch publishing guardrails.
+- Command executor workspace boundary, `.env` guard, and sensitive environment filtering.
 - Store persistence, including SQLite snapshot storage.
 - Workspace cleanup retention, terminal-state filtering, and non-overlap behavior.
 - Log redaction expectations.
 
 Next runner tests should cover:
 
-- Command executor refuses commands outside policy.
 - Job retry and backoff behavior once retries are added.
 
 ## E2E Tests

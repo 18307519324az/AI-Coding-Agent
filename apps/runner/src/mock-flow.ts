@@ -439,7 +439,8 @@ async function createWorkspaceDiffSummary(input: {
 
   const diff = await input.commandRunner({
     command: "git diff",
-    cwd: rootPath
+    cwd: rootPath,
+    workspaceRoot: rootPath
   });
 
   return {
@@ -479,6 +480,7 @@ async function runCommandAsTest(input: {
       ? await input.commandRunner({
           command: input.command,
           cwd: rootPath,
+          workspaceRoot: rootPath,
           approvedHighRisk: input.approvedHighRisk
         })
       : {
