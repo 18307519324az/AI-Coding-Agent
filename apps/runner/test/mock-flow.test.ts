@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { approvePlanFlow, approvePrFlow, createTaskFlow } from "../src/mock-flow";
 import { createStore, listTaskApprovals } from "../src/store";
@@ -27,6 +30,55 @@ describe("mock task flow", () => {
         })
       ])
     );
+  });
+
+  it("applies generated implementation edits before verification", async () => {
+    const rootPath = await fs.mkdtemp(path.join(os.tmpdir(), "ai-coding-agent-flow-"));
+    await fs.mkdir(path.join(rootPath, "src"), { recursive: true });
+    await fs.writeFile(path.join(rootPath, "src", "index.ts"), "export const value = false;\n");
+    const store = createStore();
+    const task = await createTaskFlow(store, {
+      repositoryUrl: "https://github.com/acme/customer-portal",
+      title: "Fix source value",
+      prompt: "Flip the exported source value from false to true.",
+      branchPrefix: "agent",
+      allowDependencyInstall: false,
+      allowCreatePr: false
+    }, {
+      workspaceExecution: true,
+      repositoryCloner: async () => rootPath,
+      projectAnalyzer: async () => ({
+        rootPath,
+        packageManager: "pnpm",
+        projectKind: "node",
+        hasFrontend: false,
+        scripts: { test: "vitest run" },
+        recommendedCommands: { test: "pnpm test" },
+        relevantFiles: ["src/index.ts"]
+      })
+    });
+
+    const readyForPr = await approvePlanFlow(store, task, {
+      implementationGenerator: async () => ({
+        summary: "Updated source value.",
+        edits: [{ path: "src/index.ts", content: "export const value = true;\n" }],
+        risks: []
+      }),
+      commandRunner: async (input) => ({
+        command: input.command,
+        status: "PASSED",
+        output: input.command === "git diff"
+          ? "diff --git a/src/index.ts b/src/index.ts\n-export const value = false;\n+export const value = true;\n"
+          : "",
+        durationMs: 1
+      })
+    });
+
+    await expect(fs.readFile(path.join(rootPath, "src", "index.ts"), "utf8")).resolves.toBe(
+      "export const value = true;\n"
+    );
+    expect(readyForPr.status).toBe("WAITING_FOR_PR_APPROVAL");
+    expect(store.diffs.get(task.id)?.filesChanged).toEqual(["src/index.ts"]);
   });
 
   it("uses the live GitHub PR creator only when live mode is enabled", async () => {

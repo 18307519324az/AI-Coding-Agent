@@ -72,7 +72,7 @@ Agent Core contains deterministic logic that should stay easy to unit test:
 
 ### Model Adapter
 
-The runner owns the model boundary. By default it uses the deterministic planner from `agent-core`; when `OPENAI_AGENT_MODE=live`, it calls the OpenAI Responses API with a strict JSON schema for `PlanOutput`. The API key stays in environment variables, and the Web/API contract still receives the same validated plan shape.
+The runner owns the model boundary. By default it uses the deterministic planner from `agent-core`; when `OPENAI_AGENT_MODE=live`, it calls the OpenAI Responses API with strict JSON schemas for `PlanOutput` and bounded file-edit implementation output. The API key stays in environment variables, file edits are validated against the task workspace, and the Web/API contract still receives the same validated task, diff, test, and self-review shape.
 
 ## State Machine
 
@@ -117,7 +117,5 @@ This keeps the product auditable and prevents prompt text from becoming executio
 ## Future Integration Points
 
 - Replace in-memory store with SQLite Prisma repositories.
-- Add OpenAI patch execution behind the runner model boundary.
 - Add a persistent job queue for long-running tasks.
-- Add model-driven patch application before workspace verification.
 - Add workspace cleanup jobs.

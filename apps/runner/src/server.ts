@@ -18,6 +18,7 @@ import {
   createTaskFlow,
   type BranchPublisher,
   type CommandRunner,
+  type ImplementationGenerator,
   type PlanGenerator,
   type ProjectAnalyzer,
   type PullRequestCreator,
@@ -39,6 +40,7 @@ export type ServerOptions = {
   repositoryCloner?: RepositoryCloner;
   projectAnalyzer?: ProjectAnalyzer;
   planGenerator?: PlanGenerator;
+  implementationGenerator?: ImplementationGenerator;
   commandRunner?: CommandRunner;
   branchPublisher?: BranchPublisher;
   pullRequestCreator?: PullRequestCreator;
@@ -201,7 +203,8 @@ export function createServer(store: RunnerStore = createStore(), options: Server
     if (approval.type === "PLAN") {
       return approvePlanFlow(store, task, {
         executeCommands: shouldUseWorkspaceExecution(options),
-        commandRunner: options.commandRunner
+        commandRunner: options.commandRunner,
+        implementationGenerator: options.implementationGenerator
       });
     }
     if (approval.type === "CREATE_PR") {

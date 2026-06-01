@@ -19,6 +19,12 @@ import { createId } from "./ids";
 import { createRunLog } from "./log";
 import { createPullRequest, type CreatePullRequestInput } from "./github-service";
 import { publishBranch, type BranchPublisher } from "./git-publisher";
+import {
+  applyImplementationOutput,
+  collectImplementationFiles,
+  createImplementationGeneratorFromEnv,
+  type ImplementationGenerator
+} from "./implementation-service";
 import { createPlanGeneratorFromEnv, type PlanGenerator } from "./model-service";
 import { analyzeProject } from "./project-analyzer";
 import { cloneRepository } from "./workspace";
@@ -40,6 +46,7 @@ export type TaskFlowOptions = {
 export type ApprovePlanFlowOptions = {
   executeCommands?: boolean;
   commandRunner?: CommandRunner;
+  implementationGenerator?: ImplementationGenerator;
 };
 
 export type ApprovePrFlowOptions = {
@@ -48,7 +55,7 @@ export type ApprovePrFlowOptions = {
   pullRequestCreator?: PullRequestCreator;
 };
 
-export type { BranchPublisher, CommandRunner, PlanGenerator };
+export type { BranchPublisher, CommandRunner, ImplementationGenerator, PlanGenerator };
 
 type VerificationResults = {
   unit: TestResult[];
@@ -534,7 +541,72 @@ export async function approvePlanFlow(
     message: "Applying approved patch in isolated workspace."
   }));
 
-  const shouldExecuteCommands = options.executeCommands ?? Boolean(options.commandRunner);
+  let implementationGenerator: ImplementationGenerator | undefined;
+  try {
+    implementationGenerator = options.implementationGenerator ?? createImplementationGeneratorFromEnv();
+  } catch (error) {
+    next = saveTask(store, setStatus(next, "FAILED_IMPLEMENTATION"));
+    appendLog(store, createRunLog({
+      taskId: task.id,
+      level: "error",
+      phase: "FAILED_IMPLEMENTATION",
+      message: getErrorMessage(error, "Failed to initialize implementation generator.")
+    }));
+    return next;
+  }
+
+  if (implementationGenerator) {
+    const rootPath = task.projectContext?.rootPath;
+    if (!rootPath || !task.projectContext || !task.plan) {
+      next = saveTask(store, setStatus(next, "FAILED_IMPLEMENTATION"));
+      appendLog(store, createRunLog({
+        taskId: task.id,
+        level: "error",
+        phase: "FAILED_IMPLEMENTATION",
+        message: "Implementation generation requires a workspace path, project context, and approved plan."
+      }));
+      return next;
+    }
+
+    try {
+      const files = await collectImplementationFiles({
+        rootPath,
+        plan: task.plan,
+        projectContext: task.projectContext
+      });
+      const implementation = await implementationGenerator({
+        task,
+        plan: task.plan,
+        projectContext: task.projectContext,
+        files
+      });
+      const changedFiles = await applyImplementationOutput({
+        rootPath,
+        output: implementation
+      });
+      appendLog(store, createRunLog({
+        taskId: task.id,
+        level: "info",
+        phase: "IMPLEMENTING",
+        message: `${implementation.summary} Changed files: ${changedFiles.join(", ") || "none"}.`,
+        metadata: {
+          changedFiles,
+          risks: implementation.risks
+        }
+      }));
+    } catch (error) {
+      next = saveTask(store, setStatus(next, "FAILED_IMPLEMENTATION"));
+      appendLog(store, createRunLog({
+        taskId: task.id,
+        level: "error",
+        phase: "FAILED_IMPLEMENTATION",
+        message: getErrorMessage(error, "Failed to apply implementation output.")
+      }));
+      return next;
+    }
+  }
+
+  const shouldExecuteCommands = options.executeCommands ?? Boolean(options.commandRunner || implementationGenerator);
   const commandRunner = options.commandRunner ?? executeAllowedCommand;
   const diff = shouldExecuteCommands
     ? await createWorkspaceDiffSummary({ task, commandRunner })

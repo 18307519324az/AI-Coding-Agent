@@ -24,7 +24,8 @@ Required:
 - Use repository-scoped GitHub permissions.
 - Keep GitHub write tools behind approvals.
 - Review the full diff before PR creation.
-- Send only bounded planning context to OpenAI unless a later implementation step explicitly requires more.
+- Send only bounded planning and implementation context to OpenAI.
+- Reject model-requested edits outside the task workspace, `.git`, or `.env` files.
 
 ## Command Execution
 
