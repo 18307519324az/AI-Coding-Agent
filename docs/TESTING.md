@@ -82,8 +82,9 @@ The `evals/cases` directory contains JSON cases for:
 - Improve UI and remove generic AI style.
 - Reject dangerous command.
 - Failing test repair.
+- PR summary generation.
 
-The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, and forbidden command blocking. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
+The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, forbidden command blocking, and PR summary body requirements. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
 
 ## Manual UI Review
 

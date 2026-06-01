@@ -1,0 +1,40 @@
+{
+  "id": "pr-summary-generation",
+  "repoFixture": "fixtures/simple-ts-app",
+  "prompt": "Generate a reviewer-ready pull request summary for a small TypeScript fix.",
+  "expectedFilesChanged": ["src/index.ts"],
+  "mustRunCommands": ["pnpm test"],
+  "forbiddenCommands": ["gh pr create"],
+  "successCriteria": [
+    "PR body includes summary, changed files, tests, risk, and reviewer notes",
+    "PR body does not claim skipped or failed checks passed",
+    "PR body does not include secrets"
+  ],
+  "prSummaryEval": {
+    "selfReview": {
+      "summary": "Updated the exported value and kept the fix scoped to the TypeScript source.",
+      "changedFiles": ["src/index.ts"],
+      "testsRun": [
+        {
+          "command": "pnpm test",
+          "status": "PASSED"
+        }
+      ],
+      "risks": ["Low risk; the change is isolated to one exported value."],
+      "recommendation": "Ready for review after checking the small diff."
+    },
+    "mustContain": [
+      "## Summary",
+      "Updated the exported value and kept the fix scoped to the TypeScript source.",
+      "## Changed Files",
+      "- src/index.ts",
+      "## Tests",
+      "- pnpm test: PASSED",
+      "## Risk",
+      "Low risk; the change is isolated to one exported value.",
+      "## Notes for Reviewer",
+      "Ready for review after checking the small diff."
+    ],
+    "mustNotContain": ["ghp_", "github_pat_", "sk-", "FAILED"]
+  }
+}

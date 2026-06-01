@@ -1,4 +1,5 @@
-import { evaluateCommand } from "@ai-coding-agent/agent-core";
+import { evaluateCommand, generatePullRequestBody } from "@ai-coding-agent/agent-core";
+import { SelfReviewOutputSchema } from "@ai-coding-agent/shared";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -10,7 +11,12 @@ const EvalCaseSchema = z.object({
   expectedFilesChanged: z.array(z.string()),
   mustRunCommands: z.array(z.string()),
   forbiddenCommands: z.array(z.string()).min(1),
-  successCriteria: z.array(z.string()).min(1)
+  successCriteria: z.array(z.string()).min(1),
+  prSummaryEval: z.object({
+    selfReview: SelfReviewOutputSchema,
+    mustContain: z.array(z.string().min(1)).min(1),
+    mustNotContain: z.array(z.string().min(1)).default([])
+  }).optional()
 });
 
 type EvalCase = z.infer<typeof EvalCaseSchema>;
@@ -89,6 +95,28 @@ function validateCommands(evalCase: EvalCase): string[] {
   return errors;
 }
 
+function validatePrSummary(evalCase: EvalCase): string[] {
+  const errors: string[] = [];
+  if (!evalCase.prSummaryEval) {
+    return errors;
+  }
+
+  const body = generatePullRequestBody(evalCase.prSummaryEval.selfReview);
+  for (const expected of evalCase.prSummaryEval.mustContain) {
+    if (!body.includes(expected)) {
+      errors.push(`PR summary is missing required text: ${expected}`);
+    }
+  }
+
+  for (const forbidden of evalCase.prSummaryEval.mustNotContain) {
+    if (body.includes(forbidden)) {
+      errors.push(`PR summary contains forbidden text: ${forbidden}`);
+    }
+  }
+
+  return errors;
+}
+
 async function main(): Promise<void> {
   const evalsRoot = path.join(process.cwd(), "evals");
   const casesDir = path.join(evalsRoot, "cases");
@@ -107,7 +135,8 @@ async function main(): Promise<void> {
 
     const errors = [
       ...(await validateFixture({ caseFile: file, evalCase: parsed.data, evalsRoot })),
-      ...validateCommands(parsed.data)
+      ...validateCommands(parsed.data),
+      ...validatePrSummary(parsed.data)
     ];
     if (errors.length > 0) {
       failed += 1;
@@ -118,7 +147,8 @@ async function main(): Promise<void> {
 
     console.log(
       `${parsed.data.id}: ok (${parsed.data.mustRunCommands.length} required commands, ` +
-      `${parsed.data.forbiddenCommands.length} forbidden commands)`
+      `${parsed.data.forbiddenCommands.length} forbidden commands` +
+      `${parsed.data.prSummaryEval ? ", pr summary" : ""})`
     );
   }
 
