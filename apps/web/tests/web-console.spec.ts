@@ -9,7 +9,32 @@ async function delayRunnerPost(page: Page, path: string): Promise<void> {
   });
 }
 
+async function signIn(page: Page): Promise<void> {
+  await page.goto("/login");
+  await page.getByLabel("Username").fill("operator");
+  await page.getByLabel("Password").fill("test-web-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+}
+
+test("requires web console login before protected pages and APIs", async ({ page }) => {
+  const apiResponse = await page.request.post("/api/runner/tasks", { data: {} });
+  expect(apiResponse.status()).toBe(401);
+
+  await page.goto("/tasks");
+  await expect(page).toHaveURL(/\/login\?next=%2Ftasks/);
+
+  await page.getByLabel("Password").fill("wrong-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByText("Invalid username or password.")).toBeVisible();
+
+  await page.getByLabel("Password").fill("test-web-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
+});
+
 test("dashboard shows task queue and approval state", async ({ page }) => {
+  await signIn(page);
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
@@ -19,6 +44,7 @@ test("dashboard shows task queue and approval state", async ({ page }) => {
 });
 
 test("create task form exposes loading, error, disabled, and success states", async ({ page }) => {
+  await signIn(page);
   await delayRunnerPost(page, "**/api/runner/tasks");
   await page.goto("/tasks/new");
 
@@ -36,6 +62,7 @@ test("create task form exposes loading, error, disabled, and success states", as
 });
 
 test("task detail shows plan, diff, logs, tests, and approval controls", async ({ page }) => {
+  await signIn(page);
   await page.goto("/tasks/task_login");
 
   await expect(page.getByRole("heading", { name: "Fix login button click handling" })).toBeVisible();
@@ -49,6 +76,7 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
 });
 
 test("task detail approval controls execute runner approval flow", async ({ page }) => {
+  await signIn(page);
   await page.goto("/tasks/new");
 
   await page.getByLabel("Repository URL").fill("https://github.com/acme/approval-flow");
@@ -68,6 +96,7 @@ test("task detail approval controls execute runner approval flow", async ({ page
 });
 
 test("repository form saves through the runner", async ({ page }) => {
+  await signIn(page);
   await delayRunnerPost(page, "**/api/runner/repositories");
   await page.goto("/repositories/new");
 

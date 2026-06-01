@@ -37,6 +37,8 @@ The Web console is an operational UI, not a marketing page. It provides:
 
 The current MVP uses deterministic mock data so UI and E2E behavior can be verified before wiring persistent APIs.
 
+When `WEB_AUTH_PASSWORD` is configured, the Web console protects pages and `/api/*` proxy routes with an HTTP-only session cookie issued by `/login`. When it is unset, local development remains open.
+
 ### Runner API
 
 The runner exposes:

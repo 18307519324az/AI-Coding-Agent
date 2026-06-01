@@ -20,6 +20,7 @@ Actions:
 - Confirm `RUNNER_PORT`.
 - Check process logs.
 - If `RUNNER_API_KEY` is enabled, confirm Web and Runner have the same server-side value.
+- If `WEB_AUTH_PASSWORD` is enabled, confirm the operator can sign in at `/login`.
 - Confirm workspace directory is writable.
 - Confirm secrets are present only in environment variables.
 
@@ -43,6 +44,19 @@ Actions:
 - Confirm `RUNNER_API_KEY` is set on the Runner.
 - Confirm the same `RUNNER_API_KEY` is set on the Web service as a server-side secret.
 - Confirm browser code is calling `/api/runner/*` proxy routes instead of sending credentials directly to the Runner.
+
+## Web Console Login Failure
+
+Symptoms:
+
+- Protected pages redirect to `/login`.
+- Browser-originated `/api/*` calls return `401 Authentication required.`
+
+Checks:
+
+- Confirm `WEB_AUTH_USERNAME` and `WEB_AUTH_PASSWORD` match the operator credentials.
+- Confirm `WEB_AUTH_SESSION_SECRET` is stable across Web restarts; changing it invalidates existing sessions.
+- Clear the `ai_coding_agent_session` cookie and sign in again after credential rotation.
 
 ## Task Stuck Waiting for Plan Approval
 

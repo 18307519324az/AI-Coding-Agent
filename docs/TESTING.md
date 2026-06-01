@@ -63,6 +63,7 @@ Next runner tests should cover:
 Covered in `apps/web/tests` with Playwright:
 
 - Dashboard task queue and approval state.
+- Web console login, invalid credential handling, and protected API rejection.
 - Create Task page loading, error, disabled, and success states through the server-side Runner proxy.
 - Task detail plan, diff, logs, tests, and approval controls.
 - Task detail E2E report and screenshot artifact display.

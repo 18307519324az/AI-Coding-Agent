@@ -10,6 +10,8 @@ Never commit secrets. Use environment variables for:
 - `GITHUB_PERSONAL_ACCESS_TOKEN`
 - `OPENAI_API_KEY`
 - `RUNNER_API_KEY`
+- `WEB_AUTH_PASSWORD`
+- `WEB_AUTH_SESSION_SECRET`
 - `DATABASE_URL`
 
 Forbidden:
@@ -33,6 +35,8 @@ Required:
 Set `RUNNER_API_KEY` before exposing the runner outside a trusted local network. When configured, every Runner API route except `/health` requires `Authorization: Bearer <RUNNER_API_KEY>`. The Web app should keep this value in a server-side environment variable and call the runner through server components or `/api/runner/*` proxy routes, not from browser code.
 
 Do not put Runner credentials in `NEXT_PUBLIC_*` variables.
+
+Set `WEB_AUTH_PASSWORD` before exposing the Web console. When configured, protected pages and `/api/*` proxy routes require a signed HTTP-only session cookie issued by `/login`. Use `WEB_AUTH_USERNAME` to override the default `admin` username and `WEB_AUTH_SESSION_SECRET` to sign sessions with a value that is separate from the login password. Local development can omit `WEB_AUTH_PASSWORD` to keep the console open.
 
 ## Command Execution
 

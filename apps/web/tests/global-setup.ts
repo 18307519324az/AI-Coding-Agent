@@ -11,7 +11,10 @@ const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 const serverEnv = {
   ...process.env,
   NEXT_TELEMETRY_DISABLED: "1",
-  RUNNER_API_KEY: process.env.RUNNER_API_KEY ?? "test-runner-api-key"
+  RUNNER_API_KEY: process.env.RUNNER_API_KEY ?? "test-runner-api-key",
+  WEB_AUTH_PASSWORD: process.env.WEB_AUTH_PASSWORD ?? "test-web-password",
+  WEB_AUTH_SESSION_SECRET: process.env.WEB_AUTH_SESSION_SECRET ?? "test-web-secret",
+  WEB_AUTH_USERNAME: process.env.WEB_AUTH_USERNAME ?? "operator"
 };
 
 function delay(ms: number): Promise<void> {

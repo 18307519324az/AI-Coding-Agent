@@ -117,6 +117,22 @@ select:disabled {
   padding: 18px 8px 0;
 }
 
+.sidebar-button {
+  background: transparent;
+  border: 1px solid #425163;
+  border-radius: 6px;
+  color: #f7fafc;
+  font-size: 12px;
+  min-height: 32px;
+  padding: 6px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebar-button:hover {
+  background: #22303c;
+}
+
 .status-dot {
   background: #35b779;
   border-radius: 999px;
@@ -129,6 +145,29 @@ select:disabled {
 .content {
   min-width: 0;
   padding: 28px;
+}
+
+.auth-content {
+  align-items: center;
+  display: grid;
+  min-height: 100vh;
+  padding: 28px;
+}
+
+.auth-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 22px;
+  margin: 0 auto;
+  max-width: 420px;
+  padding: 24px;
+  width: 100%;
+}
+
+.auth-form {
+  max-width: none;
 }
 
 .page-header {

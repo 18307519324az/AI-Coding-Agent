@@ -20,9 +20,13 @@ Required environment:
 ```bash
 RUNNER_API_URL=https://runner.example.com
 RUNNER_API_KEY=...
+WEB_AUTH_USERNAME=admin
+WEB_AUTH_PASSWORD=...
+WEB_AUTH_SESSION_SECRET=...
 ```
 
 Use `NEXT_PUBLIC_RUNNER_API_URL` only for unprotected local compatibility. Production Web builds should keep runner credentials server-side and use the built-in `/api/runner/*` proxy for browser-originating writes.
+Set `WEB_AUTH_PASSWORD` for every publicly reachable Web deployment; otherwise the console intentionally runs without user login for local development.
 
 ## Runner
 
@@ -62,6 +66,7 @@ When workspace cleanup is enabled, terminal task directories under `WORKSPACE_RO
 - Runner logs redact tokens.
 - GitHub token is repository-scoped.
 - Runner API key matches the Web service secret.
+- Web auth password and session secret are configured for the console.
 - Workspace cleanup policy is enabled.
 - CI passes before deploy.
 - PR creation remains approval-gated.

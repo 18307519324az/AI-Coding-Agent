@@ -11,8 +11,12 @@ const navItems = [
   { href: "/settings", label: "Settings" }
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ authEnabled, children }: { authEnabled: boolean; children: React.ReactNode }) {
   const pathname = usePathname();
+
+  if (pathname === "/login") {
+    return <main className="auth-content">{children}</main>;
+  }
 
   return (
     <div className="app-shell">
@@ -37,10 +41,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Runner online
           </span>
           <span>High-risk GitHub writes require approval.</span>
+          {authEnabled ? (
+            <form action="/api/auth/logout" method="post">
+              <button className="sidebar-button" type="submit">
+                Sign out
+              </button>
+            </form>
+          ) : null}
         </div>
       </aside>
       <main className="content">{children}</main>
     </div>
   );
 }
-
