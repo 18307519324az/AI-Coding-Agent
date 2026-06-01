@@ -53,6 +53,7 @@ RUNNER_STORE_FILE=.runner-data/store.json
 RUNNER_SQLITE_FILE=.runner-data/store.db
 DATABASE_URL=file:./.runner-data/dev.db
 RUNNER_EXECUTION_MODE=mock # set to workspace to clone/analyze repos and run allowlisted checks
+RUNNER_JOB_MODE=inline # set to queued to enqueue plan generation jobs
 GITHUB_PR_MODE=simulated # set to live only after configuring GitHub credentials
 RUNNER_PORT=8787
 ```
@@ -70,7 +71,7 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 ## MVP Flow
 
 1. User creates an Agent Task from a repository URL, issue URL, or prompt.
-2. Runner records the task and generates a structured plan.
+2. Runner records the task and generates a structured plan inline, or queues plan generation when `RUNNER_JOB_MODE=queued`.
 3. User approves or rejects the plan.
 4. Runner executes guarded steps, records logs, stores diff and test results.
 5. Runner produces a self-review.
@@ -78,3 +79,5 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 7. In live PR mode, Runner creates a branch, commits the approved workspace diff, pushes the branch through the command allowlist, creates a draft PR, and records the PR URL. In default mode, PR creation remains simulated.
 
 The default implementation keeps a deterministic mock flow for product iteration, unit tests, and UI verification. Set `OPENAI_AGENT_MODE=live` to generate task plans and bounded file edits through the OpenAI Responses API, and set `RUNNER_EXECUTION_MODE=workspace` to clone GitHub repositories into `.workspaces/`, analyze their project structure, apply approved implementation output, and run allowlisted verification commands after plan approval.
+
+In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and `POST /api/jobs/process-next` processes the next queued job. This keeps the MVP queue explicit while leaving a long-running worker process as a deploy-time extension.

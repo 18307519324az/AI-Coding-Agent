@@ -40,14 +40,19 @@ Covered in `apps/runner/test`:
 
 - Create task flow.
 - Plan approval waiting state.
+- Queued plan generation and job failure recording.
+- GitHub issue URL task intake.
+- Workspace project analysis.
+- OpenAI model adapter response validation.
+- Model-generated implementation file application.
+- Git branch publishing guardrails.
+- Store persistence, including SQLite snapshot storage.
 - Log redaction expectations.
 
 Next runner tests should cover:
 
-- Approving a plan moves through implementation, testing, self-review, and PR approval.
-- Rejecting approval cancels the task.
-- PR creation remains blocked without approval.
 - Command executor refuses commands outside policy.
+- Background worker retry and concurrency behavior once the worker is added.
 
 ## E2E Tests
 
@@ -81,4 +86,3 @@ Every front-end change should be checked for:
 - Tables, timelines, logs, diffs, and test results where useful.
 - Desktop-first console usability.
 - Mobile readability.
-

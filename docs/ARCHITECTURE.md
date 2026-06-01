@@ -49,15 +49,22 @@ The runner exposes:
 - `POST /api/tasks/:taskId/approvals/:approvalId/approve`
 - `POST /api/tasks/:taskId/approvals/:approvalId/reject`
 - `POST /api/tasks/:taskId/create-pr`
+- `GET /api/jobs`
+- `POST /api/jobs/process-next`
 
 The runner can operate in two execution modes:
 
 - `mock`: deterministic task flow for UI iteration, local tests, and demos without cloning external repositories.
 - `workspace`: clones the target GitHub repository into a task-scoped workspace, analyzes `package.json` and relevant project files, then runs allowlisted verification commands after plan approval.
 
+The runner can also operate in two task planning modes:
+
+- `inline`: default mode where task creation immediately generates the plan.
+- `queued`: `POST /api/tasks` creates the task, enqueues a `PLAN_TASK` job, and returns `202`; `/api/jobs/process-next` runs the next queued job and updates the related task.
+
 In live PR mode, the PR approval gate also publishes the prepared branch through the same command policy: `git checkout -b`, `git add .`, bounded `git commit -m`, and approval-backed `git push`. The runner creates the GitHub draft PR only after that branch publish step succeeds.
 
-The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
+The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, logs, diffs, tests, repositories, and runner jobs. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
 
 ### Agent Core
 
@@ -117,5 +124,5 @@ This keeps the product auditable and prevents prompt text from becoming executio
 ## Future Integration Points
 
 - Replace in-memory store with SQLite Prisma repositories.
-- Add a persistent job queue for long-running tasks.
+- Add a background job worker with retries, backoff, and concurrency limits.
 - Add workspace cleanup jobs.

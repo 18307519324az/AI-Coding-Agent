@@ -43,6 +43,16 @@ export type LogLevel = z.infer<typeof LogLevelSchema>;
 export const TestStatusSchema = z.enum(["PASSED", "FAILED", "SKIPPED"]);
 export type TestStatus = z.infer<typeof TestStatusSchema>;
 
+export const RunnerJobTypeSchema = z.enum([
+  "PLAN_TASK",
+  "APPROVE_PLAN",
+  "CREATE_PR"
+]);
+export type RunnerJobType = z.infer<typeof RunnerJobTypeSchema>;
+
+export const RunnerJobStatusSchema = z.enum(["QUEUED", "RUNNING", "COMPLETED", "FAILED"]);
+export type RunnerJobStatus = z.infer<typeof RunnerJobStatusSchema>;
+
 export const RepositorySchema = z.object({
   id: z.string(),
   owner: z.string(),
@@ -154,6 +164,19 @@ export const TestResultSchema = z.object({
   createdAt: z.coerce.date()
 });
 export type TestResult = z.infer<typeof TestResultSchema>;
+
+export const RunnerJobSchema = z.object({
+  id: z.string(),
+  taskId: z.string().optional(),
+  type: RunnerJobTypeSchema,
+  status: RunnerJobStatusSchema,
+  payload: z.record(z.unknown()),
+  error: z.string().optional(),
+  createdAt: z.coerce.date(),
+  startedAt: z.coerce.date().optional(),
+  completedAt: z.coerce.date().optional()
+});
+export type RunnerJob = z.infer<typeof RunnerJobSchema>;
 
 export const CreateTaskRequestSchema = z.object({
   repositoryUrl: z.string().url(),

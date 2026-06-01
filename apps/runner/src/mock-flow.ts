@@ -273,11 +273,7 @@ async function createProjectContextFromWorkspace(input: {
   }
 }
 
-export async function createTaskFlow(
-  store: RunnerStore,
-  request: ResolvedCreateTaskRequest,
-  options: TaskFlowOptions = {}
-): Promise<AgentTask> {
+export function createTaskRecord(store: RunnerStore, request: ResolvedCreateTaskRequest): AgentTask {
   const repoRef = parseGitHubRepositoryUrl(request.repositoryUrl);
   const repository: Repository = {
     id: createId("repo"),
@@ -289,7 +285,7 @@ export async function createTaskFlow(
     createdAt: new Date()
   };
 
-  let task: AgentTask = {
+  const task: AgentTask = {
     id: createId("task"),
     userId: "local-user",
     repositoryId: repository.id,
@@ -310,6 +306,20 @@ export async function createTaskFlow(
     phase: "CREATED",
     message: `Task created for ${repository.owner}/${repository.name}.`
   }));
+
+  return task;
+}
+
+export async function generateTaskPlanFlow(
+  store: RunnerStore,
+  task: AgentTask,
+  request: ResolvedCreateTaskRequest,
+  options: TaskFlowOptions = {}
+): Promise<AgentTask> {
+  const repository = store.repositories.get(task.repositoryId);
+  if (!repository) {
+    throw new Error(`Repository not found for task ${task.id}.`);
+  }
 
   let projectContext: ProjectContext | undefined;
   if (shouldUseWorkspaceExecution(options)) {
@@ -391,6 +401,14 @@ export async function createTaskFlow(
   }));
 
   return task;
+}
+
+export async function createTaskFlow(
+  store: RunnerStore,
+  request: ResolvedCreateTaskRequest,
+  options: TaskFlowOptions = {}
+): Promise<AgentTask> {
+  return generateTaskPlanFlow(store, createTaskRecord(store, request), request, options);
 }
 
 function parseDiffFiles(patch: string): string[] {

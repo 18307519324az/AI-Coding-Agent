@@ -55,6 +55,28 @@ Actions:
 - Back up the SQLite file before manual schema experiments.
 - Prefer a fresh database for integration tests that mutate tasks.
 
+## Job Queue Mode
+
+Use `RUNNER_JOB_MODE=queued` when task creation should return quickly and plan generation should be processed out of band.
+
+```bash
+RUNNER_JOB_MODE=queued pnpm --filter runner dev
+```
+
+Checks:
+
+```bash
+curl http://localhost:8787/api/jobs
+curl -X POST http://localhost:8787/api/jobs/process-next
+```
+
+Actions:
+
+- Confirm `POST /api/tasks` returns `202` with a `jobId`.
+- Confirm task details include a `jobs` array with `PLAN_TASK`.
+- If jobs stay `QUEUED`, call `/api/jobs/process-next` or check the future worker process.
+- If a job is `FAILED`, inspect its `error` and the related task logs before retrying manually.
+
 ## Tests Failed
 
 Actions:

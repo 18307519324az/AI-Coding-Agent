@@ -66,6 +66,66 @@ describe("runner API", () => {
     });
   });
 
+  it("queues plan generation when job mode is enabled", async () => {
+    const app = createServer(undefined, {
+      jobMode: "queued"
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/tasks",
+      payload: {
+        repositoryUrl: "https://github.com/example/repo",
+        title: "Fix login button",
+        prompt: "The login button does not respond when clicked.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      }
+    });
+
+    expect(response.statusCode).toBe(202);
+    expect(response.json()).toMatchObject({
+      status: "CREATED",
+      jobId: expect.stringMatching(/^job_/)
+    });
+
+    const { taskId } = response.json<{ taskId: string }>();
+    const beforeProcessing = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    const queuedTask = beforeProcessing.json<{
+      status: string;
+      plan?: unknown;
+      jobs: Array<{ status: string; type: string }>;
+    }>();
+    expect(queuedTask).toMatchObject({
+      status: "CREATED",
+      jobs: [expect.objectContaining({ status: "QUEUED", type: "PLAN_TASK" })]
+    });
+    expect(queuedTask.plan).toBeUndefined();
+
+    const processed = await app.inject({
+      method: "POST",
+      url: "/api/jobs/process-next"
+    });
+    expect(processed.statusCode).toBe(200);
+    expect(processed.json()).toMatchObject({
+      status: "COMPLETED",
+      type: "PLAN_TASK"
+    });
+
+    const afterProcessing = await app.inject({
+      method: "GET",
+      url: `/api/tasks/${taskId}`
+    });
+    expect(afterProcessing.json()).toMatchObject({
+      status: "WAITING_FOR_PLAN_APPROVAL",
+      plan: expect.objectContaining({ requiresApproval: true }),
+      jobs: [expect.objectContaining({ status: "COMPLETED", type: "PLAN_TASK" })]
+    });
+  });
+
   it("can create a task using workspace clone and project analysis providers", async () => {
     const clonedInputs: unknown[] = [];
     const app = createServer(undefined, {

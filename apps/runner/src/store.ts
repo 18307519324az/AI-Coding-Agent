@@ -4,6 +4,7 @@ import type {
   Approval,
   DiffSummary,
   Repository,
+  RunnerJob,
   TestResult
 } from "@ai-coding-agent/shared";
 import {
@@ -12,6 +13,7 @@ import {
   ApprovalSchema,
   DiffSummarySchema,
   RepositorySchema,
+  RunnerJobSchema,
   TestResultSchema
 } from "@ai-coding-agent/shared";
 import fs from "node:fs";
@@ -25,6 +27,7 @@ export type RunnerStore = {
   approvals: Map<string, Approval[]>;
   tests: Map<string, TestResult[]>;
   diffs: Map<string, DiffSummary>;
+  jobs: Map<string, RunnerJob>;
   close?: () => void;
   persist?: () => void;
 };
@@ -36,6 +39,7 @@ type StoreSnapshot = {
   approvals: Approval[];
   tests: TestResult[];
   diffs: DiffSummary[];
+  jobs: RunnerJob[];
 };
 
 function groupByTaskId<T extends { taskId: string }>(items: T[]): Map<string, T[]> {
@@ -53,7 +57,8 @@ function createSnapshot(store: RunnerStore): StoreSnapshot {
     logs: [...store.logs.values()].flat(),
     approvals: [...store.approvals.values()].flat(),
     tests: [...store.tests.values()].flat(),
-    diffs: [...store.diffs.values()]
+    diffs: [...store.diffs.values()],
+    jobs: [...store.jobs.values()]
   };
 }
 
@@ -65,7 +70,8 @@ function parseSnapshot(raw: string): StoreSnapshot {
     logs: AgentRunLogSchema.array().parse(value.logs ?? []),
     approvals: ApprovalSchema.array().parse(value.approvals ?? []),
     tests: TestResultSchema.array().parse(value.tests ?? []),
-    diffs: DiffSummarySchema.array().parse(value.diffs ?? [])
+    diffs: DiffSummarySchema.array().parse(value.diffs ?? []),
+    jobs: RunnerJobSchema.array().parse(value.jobs ?? [])
   };
 }
 
@@ -76,7 +82,8 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
     logs: new Map(),
     approvals: new Map(),
     tests: new Map(),
-    diffs: new Map()
+    diffs: new Map(),
+    jobs: new Map()
   };
 
   if (!snapshot) {
@@ -89,6 +96,7 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
   store.approvals = groupByTaskId(snapshot.approvals);
   store.tests = groupByTaskId(snapshot.tests);
   snapshot.diffs.forEach((diff) => store.diffs.set(diff.taskId, diff));
+  snapshot.jobs.forEach((job) => store.jobs.set(job.id, job));
 
   return store;
 }
@@ -163,5 +171,10 @@ export function appendTest(store: RunnerStore, result: TestResult): void {
   const tests = store.tests.get(result.taskId) ?? [];
   tests.push(result);
   store.tests.set(result.taskId, tests);
+  persistStore(store);
+}
+
+export function upsertJob(store: RunnerStore, job: RunnerJob): void {
+  store.jobs.set(job.id, job);
   persistStore(store);
 }
