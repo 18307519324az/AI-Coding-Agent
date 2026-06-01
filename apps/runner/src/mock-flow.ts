@@ -2,7 +2,8 @@ import {
   assertTransition,
   createSelfReview,
   generatePullRequestBody,
-  parseGitHubRepositoryUrl
+  parseGitHubRepositoryUrl,
+  redactSecrets
 } from "@ai-coding-agent/agent-core";
 import type {
   AgentTask,
@@ -838,7 +839,7 @@ export async function approvePrFlow(
       taskId: task.id,
       level: "error",
       phase: "FAILED_PR_CREATE",
-      message: error instanceof Error ? error.message : "Failed to create Pull Request."
+      message: redactSecrets(error instanceof Error ? error.message : "Failed to create Pull Request.")
     }));
     return next;
   }

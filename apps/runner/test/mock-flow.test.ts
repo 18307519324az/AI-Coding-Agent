@@ -138,4 +138,46 @@ describe("mock task flow", () => {
       }
     }
   });
+
+  it("redacts secrets from live PR creation failures", async () => {
+    const previousMode = process.env.GITHUB_PR_MODE;
+    process.env.GITHUB_PR_MODE = "live";
+    try {
+      const store = createStore();
+      const task = await createTaskFlow(store, {
+        repositoryUrl: "https://github.com/acme/customer-portal",
+        title: "Fix login button",
+        prompt: "The login button does not respond when clicked.",
+        branchPrefix: "agent",
+        allowDependencyInstall: false,
+        allowCreatePr: false
+      });
+      const readyForPr = await approvePlanFlow(store, task);
+      const approval = listTaskApprovals(store, readyForPr.id).find((item) => item.type === "CREATE_PR");
+
+      const failed = await approvePrFlow(store, readyForPr, approval, {
+        branchPublisher: async () => undefined,
+        pullRequestCreator: async () => {
+          throw new Error("GitHub rejected token=github_pat_1234567890abcdefghijklmnop");
+        }
+      });
+
+      expect(failed.status).toBe("FAILED_PR_CREATE");
+      expect(JSON.stringify(store.logs.get(task.id))).not.toContain("github_pat_");
+      expect(store.logs.get(task.id)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            phase: "FAILED_PR_CREATE",
+            message: "GitHub rejected [REDACTED]"
+          })
+        ])
+      );
+    } finally {
+      if (previousMode === undefined) {
+        delete process.env.GITHUB_PR_MODE;
+      } else {
+        process.env.GITHUB_PR_MODE = previousMode;
+      }
+    }
+  });
 });

@@ -8,5 +8,5 @@
       "@ai-coding-agent/shared": ["packages/shared/src/index.ts"]
     }
   },
-  "include": ["evals/*.ts"]
+  "include": ["evals/*.ts", "scripts/*.ts"]
 }

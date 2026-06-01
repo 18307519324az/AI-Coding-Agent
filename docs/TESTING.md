@@ -88,6 +88,29 @@ The `evals/cases` directory contains JSON cases for:
 
 The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, forbidden command blocking, and PR summary body requirements. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
 
+## Live PR Smoke
+
+`pnpm smoke:live-pr` exercises the real Runner path for plan approval, workspace edit, verification command execution, branch publish, and GitHub draft PR creation. It is intentionally excluded from CI because it creates a real branch and Pull Request.
+
+Required environment:
+
+```bash
+LIVE_PR_SMOKE_CONFIRM=create-draft-pr
+LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo
+GITHUB_TOKEN=...
+```
+
+Optional environment:
+
+```bash
+LIVE_PR_SMOKE_BASE_BRANCH=main
+LIVE_PR_SMOKE_ALLOW_INSTALL=1
+LIVE_PR_SMOKE_TEST_COMMAND="npm test"
+LIVE_PR_SMOKE_REQUIRE_TESTS=1
+```
+
+Use only a disposable test repository. The harness rejects repository URLs that contain credentials, redacts errors before printing, and fails by default if no repository verification command runs.
+
 ## Manual UI Review
 
 Every front-end change should be checked for:

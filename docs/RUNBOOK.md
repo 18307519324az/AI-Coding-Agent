@@ -202,6 +202,27 @@ Actions:
 - Confirm the workspace has a non-empty diff before retrying branch publish.
 - Do not retry with broader GitHub permissions until the failing step is understood.
 
+## Live PR Smoke Run
+
+Use this only against a disposable GitHub test repository.
+
+```bash
+LIVE_PR_SMOKE_CONFIRM=create-draft-pr
+LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo
+GITHUB_TOKEN=...
+pnpm smoke:live-pr
+```
+
+Expected result:
+
+- The task reaches `WAITING_FOR_PLAN_APPROVAL`.
+- Plan approval applies a bounded marker file in the cloned workspace.
+- At least one detected or overridden verification command passes unless `LIVE_PR_SMOKE_REQUIRE_TESTS=0`.
+- The PR approval gate publishes an `agent/live-pr-smoke/*` branch.
+- The runner creates a GitHub draft PR and prints the PR URL.
+
+If branch publish fails but the GitHub API token is present, check local Git credential manager or configure a repository-scoped Git credential for push. Do not place tokens in repository URLs or command arguments.
+
 ## Suspected Secret Leak
 
 Actions:

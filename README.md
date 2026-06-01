@@ -101,6 +101,19 @@ In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details inc
 
 The runner also starts a workspace cleanup worker by default. It removes only terminal task directories under `WORKSPACE_ROOT` after the retention window, and `POST /api/workspaces/cleanup` can trigger the same cleanup pass manually.
 
+## Live PR Smoke
+
+Use a disposable GitHub test repository with a fast package test script. The smoke harness creates a real branch and draft Pull Request, so it requires explicit confirmation and repository-scoped credentials.
+
+```bash
+LIVE_PR_SMOKE_CONFIRM=create-draft-pr \
+LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo \
+GITHUB_TOKEN=... \
+pnpm smoke:live-pr
+```
+
+Set `LIVE_PR_SMOKE_ALLOW_INSTALL=1` when the test repository needs dependency installation before verification. The script rejects repository URLs that embed credentials and stores temporary workspaces under `.runner-data/live-pr-smoke-workspaces`.
+
 ## Staging
 
 ```bash
