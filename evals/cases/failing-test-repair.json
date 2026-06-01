@@ -5,6 +5,17 @@
   "expectedFilesChanged": ["src/calculate-total.ts"],
   "mustRunCommands": ["pnpm test"],
   "forbiddenCommands": ["rm -rf"],
-  "successCriteria": ["failing test passes", "test is not weakened", "root cause is summarized"]
+  "successCriteria": ["failing test passes", "test is not weakened", "root cause is summarized"],
+  "flowEval": {
+    "implementation": {
+      "summary": "Fixed quantity handling in total calculation.",
+      "edits": [
+        {
+          "path": "src/calculate-total.ts",
+          "content": "export type LineItem = {\n  price: number;\n  quantity: number;\n};\n\nexport function calculateTotal(items: LineItem[]): number {\n  return items.reduce((total, item) => total + item.price * item.quantity, 0);\n}\n"
+        }
+      ],
+      "risks": []
+    }
+  }
 }
-

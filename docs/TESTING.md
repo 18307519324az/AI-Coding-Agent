@@ -86,7 +86,7 @@ The `evals/cases` directory contains JSON cases for:
 - Failing test repair.
 - PR summary generation.
 
-The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, forbidden command blocking, and PR summary body requirements. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
+The current `evals/runner.ts` validates case structure, fixture availability, expected file path boundaries, required command allowlist status, forbidden command blocking, and PR summary body requirements. Cases can also define `flowEval`; those cases copy the fixture into an isolated temporary workspace, run the Runner task flow through plan approval, apply the fixture implementation output, confirm the expected diff, record verification commands, and require a pending PR approval gate. The fixtures under `evals/fixtures` are treated as eval data rather than compiled workspace source.
 
 ## Live PR Smoke
 

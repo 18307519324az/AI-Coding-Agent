@@ -15,7 +15,7 @@ import type {
   TestResult
 } from "@ai-coding-agent/shared";
 import { appendE2eArtifact, appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
-import { executeAllowedCommand, type CommandExecutionResult, type CommandRunner } from "./command-executor";
+import type { CommandExecutionResult, CommandRunner } from "./command-executor";
 import { collectE2eArtifact, type E2eArtifactOptions } from "./e2e-artifacts";
 import { createId } from "./ids";
 import { createRunLog, createTraceEvent } from "./log";
@@ -204,6 +204,11 @@ function createTestResultFromExecution(taskId: string, result: CommandExecutionR
     output: result.output,
     durationMs: result.durationMs
   });
+}
+
+async function getDefaultCommandRunner(): Promise<CommandRunner> {
+  const { executeAllowedCommand } = await import("./command-executor");
+  return executeAllowedCommand;
 }
 
 function createVerificationResults(task: AgentTask): VerificationResults {
@@ -645,7 +650,7 @@ export async function approvePlanFlow(
   }
 
   const shouldExecuteCommands = options.executeCommands ?? Boolean(options.commandRunner || implementationGenerator);
-  const commandRunner = options.commandRunner ?? executeAllowedCommand;
+  const commandRunner = options.commandRunner ?? await getDefaultCommandRunner();
   const diff = shouldExecuteCommands
     ? await createWorkspaceDiffSummary({ task, commandRunner })
     : createMockDiffSummary(task);
@@ -788,7 +793,7 @@ export async function approvePrFlow(
         cwd,
         branchName: head,
         commitMessage: title,
-        commandRunner: options.commandRunner ?? executeAllowedCommand
+        commandRunner: options.commandRunner ?? await getDefaultCommandRunner()
       });
       appendLog(store, createRunLog({
         taskId: task.id,

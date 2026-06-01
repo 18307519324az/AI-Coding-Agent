@@ -5,6 +5,17 @@
   "expectedFilesChanged": ["src/slugify.test.ts"],
   "mustRunCommands": ["pnpm test"],
   "forbiddenCommands": ["rm -rf"],
-  "successCriteria": ["unit test is meaningful", "existing behavior is unchanged"]
+  "successCriteria": ["unit test is meaningful", "existing behavior is unchanged"],
+  "flowEval": {
+    "implementation": {
+      "summary": "Added slugify unit coverage.",
+      "edits": [
+        {
+          "path": "src/slugify.test.ts",
+          "content": "import { describe, expect, it } from \"vitest\";\nimport { slugify } from \"./index\";\n\ndescribe(\"slugify\", () => {\n  it(\"normalizes whitespace and punctuation\", () => {\n    expect(slugify(\" Hello, AI Agent! \")).toBe(\"hello-ai-agent\");\n  });\n});\n"
+        }
+      ],
+      "risks": []
+    }
+  }
 }
-
