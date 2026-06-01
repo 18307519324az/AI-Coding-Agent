@@ -17,7 +17,7 @@ import { appendE2eArtifact, appendLog, appendTest, persistStore, type RunnerStor
 import { executeAllowedCommand, type CommandExecutionResult, type CommandRunner } from "./command-executor";
 import { collectE2eArtifact, type E2eArtifactOptions } from "./e2e-artifacts";
 import { createId } from "./ids";
-import { createRunLog } from "./log";
+import { createRunLog, createTraceEvent } from "./log";
 import { createPullRequest, type CreatePullRequestInput } from "./github-service";
 import { publishBranch, type BranchPublisher } from "./git-publisher";
 import {
@@ -76,7 +76,22 @@ function setStatus(task: AgentTask, status: AgentTask["status"]): AgentTask {
 }
 
 function saveTask(store: RunnerStore, task: AgentTask): AgentTask {
+  const previous = store.tasks.get(task.id);
   store.tasks.set(task.id, task);
+  if (previous?.status !== task.status) {
+    const from = previous?.status ?? "NEW";
+    const trace = createTraceEvent({
+      taskId: task.id,
+      type: "STATE",
+      phase: task.status,
+      summary: `${from} -> ${task.status}`,
+      metadata: {
+        from,
+        to: task.status
+      }
+    });
+    store.traces.set(task.id, [...(store.traces.get(task.id) ?? []), trace]);
+  }
   persistStore(store);
   return task;
 }
@@ -380,7 +395,7 @@ export async function generateTaskPlanFlow(
     return task;
   }
 
-  task = setStatus(task, "PLAN_GENERATED");
+  task = saveTask(store, setStatus(task, "PLAN_GENERATED"));
   task.plan = plan;
 
   task = setStatus(task, "WAITING_FOR_PLAN_APPROVAL");
@@ -555,7 +570,7 @@ export async function approvePlanFlow(
   task: AgentTask,
   options: ApprovePlanFlowOptions = {}
 ): Promise<AgentTask> {
-  let next = setStatus(task, "IMPLEMENTING");
+  let next = saveTask(store, setStatus(task, "IMPLEMENTING"));
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
@@ -636,7 +651,7 @@ export async function approvePlanFlow(
   store.diffs.set(task.id, diff);
   persistStore(store);
 
-  next = setStatus(next, "TESTING");
+  next = saveTask(store, setStatus(next, "TESTING"));
   const verification = shouldExecuteCommands
     ? await runWorkspaceVerification({ store, task, commandRunner })
     : createVerificationResults(task);
@@ -662,7 +677,7 @@ export async function approvePlanFlow(
   }
 
   if (verification.e2e) {
-    next = setStatus(next, "E2E_VERIFYING");
+    next = saveTask(store, setStatus(next, "E2E_VERIFYING"));
     if (!shouldExecuteCommands) {
       appendTest(store, verification.e2e);
     }
@@ -682,7 +697,7 @@ export async function approvePlanFlow(
     }
   }
 
-  next = setStatus(next, "SELF_REVIEWING");
+  next = saveTask(store, setStatus(next, "SELF_REVIEWING"));
   const selfReview = createSelfReview({
     changedFiles: diff.filesChanged,
     tests: verification.e2e ? [...tests, verification.e2e] : tests,
@@ -713,8 +728,7 @@ export async function approvePlanFlow(
   };
   upsertApproval(store, prApproval);
 
-  store.tasks.set(next.id, next);
-  persistStore(store);
+  saveTask(store, next);
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
@@ -742,7 +756,7 @@ export async function approvePrFlow(
   approval?: Approval,
   options: ApprovePrFlowOptions = {}
 ): Promise<AgentTask> {
-  let next = setStatus(task, "PR_CREATING");
+  let next = saveTask(store, setStatus(task, "PR_CREATING"));
   appendLog(store, createRunLog({
     taskId: task.id,
     level: "info",
@@ -801,8 +815,7 @@ export async function approvePrFlow(
       prUrl,
       updatedAt: new Date()
     };
-    store.tasks.set(next.id, next);
-    persistStore(store);
+    saveTask(store, next);
 
     appendLog(store, createRunLog({
       taskId: task.id,
@@ -820,8 +833,7 @@ export async function approvePrFlow(
       ...next,
       updatedAt: new Date()
     };
-    store.tasks.set(next.id, next);
-    persistStore(store);
+    saveTask(store, next);
     appendLog(store, createRunLog({
       taskId: task.id,
       level: "error",

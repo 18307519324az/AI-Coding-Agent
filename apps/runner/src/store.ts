@@ -1,6 +1,7 @@
 import type {
   AgentRunLog,
   AgentTask,
+  AgentTraceEvent,
   Approval,
   DiffSummary,
   E2eArtifact,
@@ -11,6 +12,7 @@ import type {
 import {
   AgentRunLogSchema,
   AgentTaskSchema,
+  AgentTraceEventSchema,
   ApprovalSchema,
   DiffSummarySchema,
   E2eArtifactSchema,
@@ -25,6 +27,7 @@ import path from "node:path";
 export type RunnerStore = {
   repositories: Map<string, Repository>;
   tasks: Map<string, AgentTask>;
+  traces: Map<string, AgentTraceEvent[]>;
   logs: Map<string, AgentRunLog[]>;
   approvals: Map<string, Approval[]>;
   tests: Map<string, TestResult[]>;
@@ -38,6 +41,7 @@ export type RunnerStore = {
 type StoreSnapshot = {
   repositories: Repository[];
   tasks: AgentTask[];
+  traces: AgentTraceEvent[];
   logs: AgentRunLog[];
   approvals: Approval[];
   tests: TestResult[];
@@ -58,6 +62,7 @@ function createSnapshot(store: RunnerStore): StoreSnapshot {
   return {
     repositories: [...store.repositories.values()],
     tasks: [...store.tasks.values()],
+    traces: [...store.traces.values()].flat(),
     logs: [...store.logs.values()].flat(),
     approvals: [...store.approvals.values()].flat(),
     tests: [...store.tests.values()].flat(),
@@ -72,6 +77,7 @@ function parseSnapshot(raw: string): StoreSnapshot {
   return {
     repositories: RepositorySchema.array().parse(value.repositories ?? []),
     tasks: AgentTaskSchema.array().parse(value.tasks ?? []),
+    traces: AgentTraceEventSchema.array().parse(value.traces ?? []),
     logs: AgentRunLogSchema.array().parse(value.logs ?? []),
     approvals: ApprovalSchema.array().parse(value.approvals ?? []),
     tests: TestResultSchema.array().parse(value.tests ?? []),
@@ -85,6 +91,7 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
   const store: RunnerStore = {
     repositories: new Map(),
     tasks: new Map(),
+    traces: new Map(),
     logs: new Map(),
     approvals: new Map(),
     tests: new Map(),
@@ -99,6 +106,7 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
 
   snapshot.repositories.forEach((repository) => store.repositories.set(repository.id, repository));
   snapshot.tasks.forEach((task) => store.tasks.set(task.id, task));
+  store.traces = groupByTaskId(snapshot.traces);
   store.logs = groupByTaskId(snapshot.logs);
   store.approvals = groupByTaskId(snapshot.approvals);
   store.tests = groupByTaskId(snapshot.tests);
@@ -172,6 +180,13 @@ export function appendLog(store: RunnerStore, log: AgentRunLog): void {
   const logs = store.logs.get(log.taskId) ?? [];
   logs.push(log);
   store.logs.set(log.taskId, logs);
+  persistStore(store);
+}
+
+export function appendTrace(store: RunnerStore, trace: AgentTraceEvent): void {
+  const traces = store.traces.get(trace.taskId) ?? [];
+  traces.push(trace);
+  store.traces.set(trace.taskId, traces);
   persistStore(store);
 }
 

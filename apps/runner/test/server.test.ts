@@ -295,9 +295,18 @@ describe("runner API", () => {
       diff: { filesChanged: string[] };
       e2eArtifacts: Array<{ command: string; reportUrl: string; screenshots: Array<{ path: string }> }>;
       tests: Array<{ command: string; output: string; status: string }>;
+      traces: Array<{ phase: string; summary: string; type: string }>;
     }>();
 
     expect(body.diff.filesChanged).toEqual(["src/index.ts"]);
+    expect(body.traces).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "STATE", phase: "IMPLEMENTING", summary: "WAITING_FOR_PLAN_APPROVAL -> IMPLEMENTING" }),
+        expect.objectContaining({ type: "STATE", phase: "TESTING", summary: "IMPLEMENTING -> TESTING" }),
+        expect.objectContaining({ type: "STATE", phase: "E2E_VERIFYING", summary: "TESTING -> E2E_VERIFYING" }),
+        expect.objectContaining({ type: "STATE", phase: "WAITING_FOR_PR_APPROVAL", summary: "SELF_REVIEWING -> WAITING_FOR_PR_APPROVAL" })
+      ])
+    );
     expect(body.tests).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ command: "pnpm lint", output: "ran pnpm lint", status: "PASSED" }),

@@ -32,6 +32,20 @@ describe("runner store persistence", () => {
         createdAt: new Date("2026-06-01T01:05:00Z")
       }
     ]);
+    store.traces.set("task_1", [
+      {
+        id: "trace_1",
+        taskId: "task_1",
+        type: "STATE",
+        phase: "TESTING",
+        summary: "IMPLEMENTING -> TESTING",
+        metadata: {
+          from: "IMPLEMENTING",
+          to: "TESTING"
+        },
+        createdAt: new Date("2026-06-01T01:04:30Z")
+      }
+    ]);
     store.jobs.set("job_1", {
       id: "job_1",
       taskId: "task_1",
@@ -57,6 +71,11 @@ describe("runner store persistence", () => {
     expect(restored.e2eArtifacts.get("task_1")?.[0]).toMatchObject({
       command: "pnpm test:e2e",
       reportUrl: "artifacts/task_1/e2e/playwright-report/index.html"
+    });
+    expect(restored.traces.get("task_1")?.[0]?.createdAt).toBeInstanceOf(Date);
+    expect(restored.traces.get("task_1")?.[0]).toMatchObject({
+      phase: "TESTING",
+      summary: "IMPLEMENTING -> TESTING"
     });
     expect(restored.jobs.get("job_1")?.nextRunAt).toBeInstanceOf(Date);
     expect(restored.jobs.get("job_1")).toMatchObject({
@@ -126,6 +145,9 @@ describe("runner store persistence", () => {
       hasFrontend: true
     });
     expect(restored.logs.get(task.id)?.length).toBeGreaterThan(0);
+    expect(restored.traces.get(task.id)?.map((trace) => trace.phase)).toEqual(
+      expect.arrayContaining(["CREATED", "CONTEXT_ANALYZING", "PLAN_GENERATED", "WAITING_FOR_PLAN_APPROVAL"])
+    );
 
     fs.rmSync(filePath, { force: true });
   });

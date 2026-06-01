@@ -139,6 +139,7 @@ Actions:
 Actions:
 
 - Read failed command and output.
+- Compare the task trace with the run log to identify the last completed phase.
 - Re-run the specific failing test when safe.
 - Do not approve PR creation until failures are resolved or explicitly accepted.
 
@@ -163,6 +164,7 @@ Actions:
 
 - Confirm each task creates a directory under `.workspaces/<task_id>/repo`.
 - Confirm logs show `REPO_CLONING` before `CONTEXT_ANALYZING`.
+- Confirm the task detail trace shows state transitions through `IMPLEMENTING`, `TESTING`, and any failure phase.
 - If verification fails, inspect stored test output before retrying or approving PR creation.
 
 ## E2E Artifacts

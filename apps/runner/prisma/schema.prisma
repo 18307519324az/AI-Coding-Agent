@@ -41,6 +41,7 @@ model AgentTask {
   user         User          @relation(fields: [userId], references: [id])
   repository   Repository    @relation(fields: [repositoryId], references: [id])
   logs         AgentRunLog[]
+  traces       AgentTraceEvent[]
   approvals    Approval[]
   testResults  TestResult[]
   e2eArtifacts E2eArtifact[]
@@ -53,6 +54,17 @@ model AgentRunLog {
   level     String
   phase     String
   message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  task      AgentTask @relation(fields: [taskId], references: [id])
+}
+
+model AgentTraceEvent {
+  id        String   @id
+  taskId    String
+  type      String
+  phase     String
+  summary   String
   metadata  Json?
   createdAt DateTime @default(now())
   task      AgentTask @relation(fields: [taskId], references: [id])

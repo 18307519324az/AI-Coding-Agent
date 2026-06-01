@@ -4,7 +4,7 @@ AI Coding Agent is a developer-focused automation console for turning GitHub iss
 
 The repository is a pnpm TypeScript monorepo with:
 
-- `apps/web`: Next.js Web console with realistic task, approval, log, diff, test, and PR states.
+- `apps/web`: Next.js Web console with realistic task, approval, trace, log, diff, test, and PR states.
 - `apps/runner`: Fastify Agent Runner API with in-memory MVP storage and guarded command execution primitives.
 - `packages/shared`: Zod schemas and shared domain types.
 - `packages/agent-core`: state machine, command allowlist, log redaction, GitHub URL parsing, plan output, and PR summary helpers.
@@ -90,7 +90,7 @@ The runner treats shell execution as a policy decision, not a free-form chat act
 1. User creates an Agent Task from a repository URL, issue URL, or prompt.
 2. Runner records the task and generates a structured plan inline, or queues plan generation when `RUNNER_JOB_MODE=queued`.
 3. User approves or rejects the plan.
-4. Runner executes guarded steps, records logs, stores diff and test results.
+4. Runner executes guarded steps, records trace and logs, stores diff and test results.
 5. Runner produces a self-review.
 6. User approves PR creation.
 7. In live PR mode, Runner creates a branch, commits the approved workspace diff, pushes the branch through the command allowlist, creates a draft PR, and records the PR URL. In default mode, PR creation remains simulated.

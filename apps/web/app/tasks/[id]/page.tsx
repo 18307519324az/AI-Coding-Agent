@@ -82,6 +82,7 @@ export default async function TaskDetailPage({
   const taskE2eArtifacts = task.e2eArtifacts;
   const taskLogs = task.logs;
   const taskTests = task.tests;
+  const taskTraces = task.traces;
   const approvalViews = taskApprovals.map((approval) => ({
     ...approval,
     createdAt: approval.createdAt.toISOString(),
@@ -181,6 +182,28 @@ export default async function TaskDetailPage({
 
       <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
+          <h2>Execution Trace</h2>
+          {taskTraces.length === 0 ? (
+            <div className="empty-state">
+              <strong>No trace events yet</strong>
+              <span className="muted small">State transitions appear as the runner advances the task.</span>
+            </div>
+          ) : (
+            <div className="timeline">
+              {taskTraces.map((trace) => (
+                <div className="timeline-item" key={trace.id}>
+                  <strong>{trace.phase}</strong>
+                  <span className="muted small">
+                    {trace.type} - {trace.createdAt.toLocaleString()}
+                  </span>
+                  <p className="small">{trace.summary}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="panel">
           <h2>Run Log</h2>
           {taskLogs.length === 0 ? (
             <div className="empty-state">
@@ -199,7 +222,9 @@ export default async function TaskDetailPage({
             </div>
           )}
         </section>
+      </div>
 
+      <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
           <h2>Diff Preview</h2>
           {task.diff ? (
@@ -214,9 +239,7 @@ export default async function TaskDetailPage({
             </div>
           )}
         </section>
-      </div>
 
-      <div className="grid two" style={{ marginTop: 16 }}>
         <section className="panel">
           <h2>Test Results</h2>
           {taskTests.length === 0 ? (
@@ -235,22 +258,22 @@ export default async function TaskDetailPage({
             </div>
           )}
         </section>
-
-        <section className="panel">
-          <h2>Self Review</h2>
-          {task.selfReview ? (
-            <>
-              <p>{task.selfReview.summary}</p>
-              <p className="muted small">{task.selfReview.recommendation}</p>
-            </>
-          ) : (
-            <div className="empty-state">
-              <strong>Self-review pending</strong>
-              <span className="muted small">The runner writes this after tests complete.</span>
-            </div>
-          )}
-        </section>
       </div>
+
+      <section className="panel" style={{ marginTop: 16 }}>
+        <h2>Self Review</h2>
+        {task.selfReview ? (
+          <>
+            <p>{task.selfReview.summary}</p>
+            <p className="muted small">{task.selfReview.recommendation}</p>
+          </>
+        ) : (
+          <div className="empty-state">
+            <strong>Self-review pending</strong>
+            <span className="muted small">The runner writes this after tests complete.</span>
+          </div>
+        )}
+      </section>
 
       <section className="panel" style={{ marginTop: 16 }}>
         <h2>E2E Report</h2>

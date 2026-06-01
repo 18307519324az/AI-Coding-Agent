@@ -40,6 +40,9 @@ export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>;
 export const LogLevelSchema = z.enum(["debug", "info", "warn", "error"]);
 export type LogLevel = z.infer<typeof LogLevelSchema>;
 
+export const TraceEventTypeSchema = z.enum(["STATE", "APPROVAL", "COMMAND", "GITHUB", "ARTIFACT"]);
+export type TraceEventType = z.infer<typeof TraceEventTypeSchema>;
+
 export const TestStatusSchema = z.enum(["PASSED", "FAILED", "SKIPPED"]);
 export type TestStatus = z.infer<typeof TestStatusSchema>;
 
@@ -142,6 +145,17 @@ export const AgentRunLogSchema = z.object({
   createdAt: z.coerce.date()
 });
 export type AgentRunLog = z.infer<typeof AgentRunLogSchema>;
+
+export const AgentTraceEventSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  type: TraceEventTypeSchema,
+  phase: z.string(),
+  summary: z.string(),
+  metadata: z.record(z.unknown()).optional(),
+  createdAt: z.coerce.date()
+});
+export type AgentTraceEvent = z.infer<typeof AgentTraceEventSchema>;
 
 export const ApprovalSchema = z.object({
   id: z.string(),

@@ -41,6 +41,7 @@ Covered in `apps/runner/test`:
 - API key protection for Runner API routes while keeping `/health` public.
 - Create task flow.
 - Plan approval waiting state.
+- Task trace persistence and state-transition exposure in task detail responses.
 - Queued plan generation, job retry/backoff, and terminal failure recording.
 - Background job worker interval, stop, error, non-overlap, and concurrency behavior.
 - GitHub issue URL task intake.
@@ -67,6 +68,7 @@ Covered in `apps/web/tests` with Playwright:
 - Runner Jobs page retry attempt and backoff display.
 - Create Task page loading, error, disabled, and success states through the server-side Runner proxy.
 - Task detail plan, diff, logs, tests, and approval controls.
+- Task detail execution trace.
 - Task detail E2E report and screenshot artifact display.
 - Task detail approve-plan and approve-PR actions through the server-side Runner proxy.
 - Repository form save flow against a Runner started with API key auth in test setup.

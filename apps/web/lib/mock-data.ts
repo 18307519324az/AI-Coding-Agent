@@ -1,6 +1,7 @@
 import type {
   AgentRunLog,
   AgentTask,
+  AgentTraceEvent,
   Approval,
   DiffSummary,
   E2eArtifact,
@@ -130,6 +131,41 @@ export const logs: AgentRunLog[] = [
     phase: "TESTING",
     message: "lint, typecheck, unit, and Playwright smoke checks passed.",
     createdAt: new Date("2026-05-31T09:22:00Z")
+  }
+];
+
+export const traces: AgentTraceEvent[] = [
+  {
+    id: "trace_login_created",
+    taskId: "task_login",
+    type: "STATE",
+    phase: "CREATED",
+    summary: "NEW -> CREATED",
+    createdAt: new Date("2026-05-31T09:00:00Z")
+  },
+  {
+    id: "trace_login_implementing",
+    taskId: "task_login",
+    type: "STATE",
+    phase: "IMPLEMENTING",
+    summary: "WAITING_FOR_PLAN_APPROVAL -> IMPLEMENTING",
+    createdAt: new Date("2026-05-31T09:15:00Z")
+  },
+  {
+    id: "trace_login_testing",
+    taskId: "task_login",
+    type: "STATE",
+    phase: "TESTING",
+    summary: "IMPLEMENTING -> TESTING",
+    createdAt: new Date("2026-05-31T09:18:00Z")
+  },
+  {
+    id: "trace_login_waiting_pr",
+    taskId: "task_login",
+    type: "STATE",
+    phase: "WAITING_FOR_PR_APPROVAL",
+    summary: "SELF_REVIEWING -> WAITING_FOR_PR_APPROVAL",
+    createdAt: new Date("2026-05-31T09:23:00Z")
   }
 ];
 

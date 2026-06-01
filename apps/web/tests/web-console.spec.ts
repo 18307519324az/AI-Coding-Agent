@@ -81,6 +81,8 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
   await expect(page.getByRole("heading", { name: "Fix login button click handling" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Execution Plan" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Project Context" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Execution Trace" })).toBeVisible();
+  await expect(page.getByText("WAITING_FOR_PR_APPROVAL").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Diff Preview" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "E2E Report" })).toBeVisible();
   await expect(page.getByText("playwright-report/index.html")).toBeVisible();

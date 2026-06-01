@@ -1,6 +1,7 @@
 import type {
   AgentRunLog,
   AgentTask,
+  AgentTraceEvent,
   Approval,
   DiffSummary,
   E2eArtifact,
@@ -18,7 +19,8 @@ import {
   repositories as mockRepositories,
   runnerJobs as mockRunnerJobs,
   tasks as mockTasks,
-  testResults as mockTests
+  testResults as mockTests,
+  traces as mockTraces
 } from "./mock-data";
 import { createRunnerHeaders, runnerBaseUrl } from "./runner-config";
 
@@ -30,6 +32,7 @@ export type TaskDetail = AgentTask & {
   logs: AgentRunLog[];
   repository?: Repository;
   tests: TestResult[];
+  traces: AgentTraceEvent[];
 };
 
 function hydrateTask(task: AgentTask): AgentTask {
@@ -59,6 +62,13 @@ function hydrateLog(log: AgentRunLog): AgentRunLog {
   return {
     ...log,
     createdAt: new Date(log.createdAt)
+  };
+}
+
+function hydrateTrace(trace: AgentTraceEvent): AgentTraceEvent {
+  return {
+    ...trace,
+    createdAt: new Date(trace.createdAt)
   };
 }
 
@@ -139,7 +149,8 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefi
       jobs: (live.jobs ?? []).map(hydrateRunnerJob),
       logs: (live.logs ?? []).map(hydrateLog),
       repository: live.repository ? hydrateRepository(live.repository) : undefined,
-      tests: (live.tests ?? []).map(hydrateTest)
+      tests: (live.tests ?? []).map(hydrateTest),
+      traces: (live.traces ?? []).map(hydrateTrace)
     };
   }
 
@@ -156,7 +167,8 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefi
     jobs: mockRunnerJobs.filter((job) => job.taskId === taskId),
     logs: mockLogs.filter((log) => log.taskId === taskId),
     repository: getMockRepository(task.repositoryId),
-    tests: mockTests.filter((test) => test.taskId === taskId)
+    tests: mockTests.filter((test) => test.taskId === taskId),
+    traces: mockTraces.filter((trace) => trace.taskId === taskId)
   };
 }
 

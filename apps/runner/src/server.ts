@@ -13,7 +13,7 @@ import { parseGitHubRepositoryUrl } from "@ai-coding-agent/agent-core";
 import { createId } from "./ids";
 import { processNextRunnerJob, type RunnerJobProcessorOptions } from "./job-processor";
 import { enqueueJob, listJobs } from "./job-queue";
-import { createRunLog } from "./log";
+import { createRunLog, createTraceEvent } from "./log";
 import { resolveCreateTaskRequest, type IssueFetcher } from "./issue-service";
 import {
   approvePlanFlow,
@@ -28,7 +28,7 @@ import {
   type PullRequestCreator,
   type RepositoryCloner
 } from "./mock-flow";
-import { appendLog, createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
+import { appendLog, appendTrace, createStore, listTaskApprovals, persistStore, upsertApproval, type RunnerStore } from "./store";
 import { getWorkspaceRoot } from "./workspace";
 import { cleanupTaskWorkspaces, type WorkspaceCleanupOptions } from "./workspace-cleanup";
 
@@ -267,6 +267,7 @@ export function createServer(store: RunnerStore = createStore(), options: Server
     return {
       ...task,
       approvals: listTaskApprovals(store, taskId),
+      traces: store.traces.get(taskId) ?? [],
       logs: store.logs.get(taskId) ?? [],
       repository: store.repositories.get(task.repositoryId),
       tests: store.tests.get(taskId) ?? [],
@@ -365,6 +366,16 @@ export function createServer(store: RunnerStore = createStore(), options: Server
       updatedAt: new Date()
     });
     persistStore(store);
+    appendTrace(store, createTraceEvent({
+      taskId,
+      type: "STATE",
+      phase: "CANCELLED",
+      summary: `${task.status} -> CANCELLED`,
+      metadata: {
+        from: task.status,
+        to: "CANCELLED"
+      }
+    }));
 
     return store.tasks.get(taskId);
   });
