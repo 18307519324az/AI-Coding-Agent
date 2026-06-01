@@ -108,11 +108,12 @@ Use a disposable GitHub test repository with a fast package test script. The smo
 ```bash
 LIVE_PR_SMOKE_CONFIRM=create-draft-pr \
 LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo \
+LIVE_PR_SMOKE_RESULT_FILE=.runner-data/live-pr-smoke-result.json \
 GITHUB_TOKEN=... \
 pnpm smoke:live-pr
 ```
 
-Set `LIVE_PR_SMOKE_ALLOW_INSTALL=1` when the test repository needs dependency installation before verification. The script rejects repository URLs that embed credentials and stores temporary workspaces under `.runner-data/live-pr-smoke-workspaces`.
+Set `LIVE_PR_SMOKE_ALLOW_INSTALL=1` when the test repository needs dependency installation before verification. The script rejects repository URLs that embed credentials, stores temporary workspaces under `.runner-data/live-pr-smoke-workspaces`, and can write a redacted result artifact with the created PR URL.
 
 ## Staging
 

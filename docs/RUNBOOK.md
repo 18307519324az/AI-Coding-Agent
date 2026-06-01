@@ -209,6 +209,7 @@ Use this only against a disposable GitHub test repository.
 ```bash
 LIVE_PR_SMOKE_CONFIRM=create-draft-pr
 LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo
+LIVE_PR_SMOKE_RESULT_FILE=.runner-data/live-pr-smoke-result.json
 GITHUB_TOKEN=...
 pnpm smoke:live-pr
 ```
@@ -220,6 +221,7 @@ Expected result:
 - At least one detected or overridden verification command passes unless `LIVE_PR_SMOKE_REQUIRE_TESTS=0`.
 - The PR approval gate publishes an `agent/live-pr-smoke/*` branch.
 - The runner creates a GitHub draft PR and prints the PR URL.
+- If `LIVE_PR_SMOKE_RESULT_FILE` is set, the runner writes a JSON artifact with the PR URL, branch, marker path, and verification command statuses.
 
 If branch publish fails but the GitHub API token is present, check local Git credential manager or configure a repository-scoped Git credential for push. Do not place tokens in repository URLs or command arguments.
 

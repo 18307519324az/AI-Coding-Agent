@@ -107,9 +107,10 @@ LIVE_PR_SMOKE_BASE_BRANCH=main
 LIVE_PR_SMOKE_ALLOW_INSTALL=1
 LIVE_PR_SMOKE_TEST_COMMAND="npm test"
 LIVE_PR_SMOKE_REQUIRE_TESTS=1
+LIVE_PR_SMOKE_RESULT_FILE=.runner-data/live-pr-smoke-result.json
 ```
 
-Use only a disposable test repository. The harness rejects repository URLs that contain credentials, redacts errors before printing, and fails by default if no repository verification command runs.
+Use only a disposable test repository. The harness rejects repository URLs that contain credentials, redacts errors before printing, fails by default if no repository verification command runs, and can save a JSON result artifact containing the PR URL, branch, marker path, and test command statuses.
 
 ## Manual UI Review
 

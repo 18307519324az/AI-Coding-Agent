@@ -1,6 +1,6 @@
 import { redactSecrets } from "@ai-coding-agent/agent-core";
 import type { Approval, PlanOutput, ResolvedCreateTaskRequest, TestResult } from "@ai-coding-agent/shared";
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   approvePlanFlow,
@@ -159,6 +159,7 @@ async function main(): Promise<void> {
   const stamp = uniqueStamp();
   const markerPath = env("LIVE_PR_SMOKE_MARKER_PATH") ?? `ai-coding-agent-smoke/${stamp}.md`;
   const baseBranch = env("LIVE_PR_SMOKE_BASE_BRANCH") ?? "main";
+  const resultFile = env("LIVE_PR_SMOKE_RESULT_FILE");
   const workspaceRoot = path.resolve(
     env("LIVE_PR_SMOKE_WORKSPACE_ROOT") ?? path.join(process.cwd(), ".runner-data", "live-pr-smoke-workspaces")
   );
@@ -238,6 +239,26 @@ async function main(): Promise<void> {
     console.log(`Task: ${completed.id}`);
     console.log(`Branch: ${completed.branchName ?? "unknown"}`);
     console.log(`PR: ${completed.prUrl}`);
+
+    if (resultFile) {
+      const target = path.resolve(resultFile);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, `${JSON.stringify({
+        completedAt: new Date().toISOString(),
+        repositoryUrl,
+        baseBranch,
+        taskId: completed.id,
+        branchName: completed.branchName,
+        prUrl: completed.prUrl,
+        markerPath,
+        tests: tests.map((test) => ({
+          command: test.command,
+          status: test.status,
+          durationMs: test.durationMs
+        }))
+      }, null, 2)}\n`, "utf8");
+      console.log(`Result file: ${target}`);
+    }
   });
 }
 
