@@ -43,6 +43,7 @@ model AgentTask {
   logs         AgentRunLog[]
   approvals    Approval[]
   testResults  TestResult[]
+  e2eArtifacts E2eArtifact[]
 }
 
 model AgentRunLog {
@@ -78,3 +79,12 @@ model TestResult {
   task       AgentTask @relation(fields: [taskId], references: [id])
 }
 
+model E2eArtifact {
+  id          String    @id
+  taskId      String
+  command     String
+  reportUrl   String
+  screenshots Json
+  createdAt   DateTime  @default(now())
+  task        AgentTask @relation(fields: [taskId], references: [id])
+}

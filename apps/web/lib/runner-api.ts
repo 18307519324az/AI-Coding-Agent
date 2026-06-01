@@ -3,6 +3,7 @@ import type {
   AgentTask,
   Approval,
   DiffSummary,
+  E2eArtifact,
   Repository,
   TestResult
 } from "@ai-coding-agent/shared";
@@ -11,6 +12,7 @@ import {
   diffSummary as mockDiff,
   getRepository as getMockRepository,
   getTask as getMockTask,
+  e2eArtifacts as mockE2eArtifacts,
   logs as mockLogs,
   repositories as mockRepositories,
   tasks as mockTasks,
@@ -21,6 +23,7 @@ import { createRunnerHeaders, runnerBaseUrl } from "./runner-config";
 export type TaskDetail = AgentTask & {
   approvals: Approval[];
   diff?: DiffSummary;
+  e2eArtifacts: E2eArtifact[];
   logs: AgentRunLog[];
   repository?: Repository;
   tests: TestResult[];
@@ -60,6 +63,13 @@ function hydrateTest(test: TestResult): TestResult {
   return {
     ...test,
     createdAt: new Date(test.createdAt)
+  };
+}
+
+function hydrateE2eArtifact(artifact: E2eArtifact): E2eArtifact {
+  return {
+    ...artifact,
+    createdAt: new Date(artifact.createdAt)
   };
 }
 
@@ -103,6 +113,7 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefi
       ...hydrateTask(live),
       approvals: (live.approvals ?? []).map(hydrateApproval),
       diff: live.diff,
+      e2eArtifacts: (live.e2eArtifacts ?? []).map(hydrateE2eArtifact),
       logs: (live.logs ?? []).map(hydrateLog),
       repository: live.repository ? hydrateRepository(live.repository) : undefined,
       tests: (live.tests ?? []).map(hydrateTest)
@@ -118,6 +129,7 @@ export async function getTaskDetail(taskId: string): Promise<TaskDetail | undefi
     ...task,
     approvals: mockApprovals.filter((approval) => approval.taskId === taskId),
     diff: mockDiff.taskId === taskId ? mockDiff : undefined,
+    e2eArtifacts: mockE2eArtifacts.filter((artifact) => artifact.taskId === taskId),
     logs: mockLogs.filter((log) => log.taskId === taskId),
     repository: getMockRepository(task.repositoryId),
     tests: mockTests.filter((test) => test.taskId === taskId)

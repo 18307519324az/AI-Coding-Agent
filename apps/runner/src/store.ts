@@ -3,6 +3,7 @@ import type {
   AgentTask,
   Approval,
   DiffSummary,
+  E2eArtifact,
   Repository,
   RunnerJob,
   TestResult
@@ -12,6 +13,7 @@ import {
   AgentTaskSchema,
   ApprovalSchema,
   DiffSummarySchema,
+  E2eArtifactSchema,
   RepositorySchema,
   RunnerJobSchema,
   TestResultSchema
@@ -26,6 +28,7 @@ export type RunnerStore = {
   logs: Map<string, AgentRunLog[]>;
   approvals: Map<string, Approval[]>;
   tests: Map<string, TestResult[]>;
+  e2eArtifacts: Map<string, E2eArtifact[]>;
   diffs: Map<string, DiffSummary>;
   jobs: Map<string, RunnerJob>;
   close?: () => void;
@@ -38,6 +41,7 @@ type StoreSnapshot = {
   logs: AgentRunLog[];
   approvals: Approval[];
   tests: TestResult[];
+  e2eArtifacts: E2eArtifact[];
   diffs: DiffSummary[];
   jobs: RunnerJob[];
 };
@@ -57,6 +61,7 @@ function createSnapshot(store: RunnerStore): StoreSnapshot {
     logs: [...store.logs.values()].flat(),
     approvals: [...store.approvals.values()].flat(),
     tests: [...store.tests.values()].flat(),
+    e2eArtifacts: [...store.e2eArtifacts.values()].flat(),
     diffs: [...store.diffs.values()],
     jobs: [...store.jobs.values()]
   };
@@ -70,6 +75,7 @@ function parseSnapshot(raw: string): StoreSnapshot {
     logs: AgentRunLogSchema.array().parse(value.logs ?? []),
     approvals: ApprovalSchema.array().parse(value.approvals ?? []),
     tests: TestResultSchema.array().parse(value.tests ?? []),
+    e2eArtifacts: E2eArtifactSchema.array().parse(value.e2eArtifacts ?? []),
     diffs: DiffSummarySchema.array().parse(value.diffs ?? []),
     jobs: RunnerJobSchema.array().parse(value.jobs ?? [])
   };
@@ -82,6 +88,7 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
     logs: new Map(),
     approvals: new Map(),
     tests: new Map(),
+    e2eArtifacts: new Map(),
     diffs: new Map(),
     jobs: new Map()
   };
@@ -95,6 +102,7 @@ export function createStore(snapshot?: StoreSnapshot): RunnerStore {
   store.logs = groupByTaskId(snapshot.logs);
   store.approvals = groupByTaskId(snapshot.approvals);
   store.tests = groupByTaskId(snapshot.tests);
+  store.e2eArtifacts = groupByTaskId(snapshot.e2eArtifacts);
   snapshot.diffs.forEach((diff) => store.diffs.set(diff.taskId, diff));
   snapshot.jobs.forEach((job) => store.jobs.set(job.id, job));
 
@@ -171,6 +179,13 @@ export function appendTest(store: RunnerStore, result: TestResult): void {
   const tests = store.tests.get(result.taskId) ?? [];
   tests.push(result);
   store.tests.set(result.taskId, tests);
+  persistStore(store);
+}
+
+export function appendE2eArtifact(store: RunnerStore, artifact: E2eArtifact): void {
+  const artifacts = store.e2eArtifacts.get(artifact.taskId) ?? [];
+  artifacts.push(artifact);
+  store.e2eArtifacts.set(artifact.taskId, artifacts);
   persistStore(store);
 }
 

@@ -281,6 +281,7 @@ describe("runner API", () => {
     });
     const body = afterApproval.json<{
       diff: { filesChanged: string[] };
+      e2eArtifacts: Array<{ command: string; reportUrl: string; screenshots: Array<{ path: string }> }>;
       tests: Array<{ command: string; output: string; status: string }>;
     }>();
 
@@ -293,6 +294,13 @@ describe("runner API", () => {
         expect.objectContaining({ command: "pnpm test:e2e", output: "ran pnpm test:e2e", status: "PASSED" })
       ])
     );
+    expect(body.e2eArtifacts).toEqual([
+      expect.objectContaining({
+        command: "pnpm test:e2e",
+        reportUrl: expect.stringContaining("playwright-report/index.html"),
+        screenshots: [expect.objectContaining({ path: expect.stringContaining("task-detail.png") })]
+      })
+    ]);
   });
 
   it("stops a workspace task when a verification command fails", async () => {
@@ -461,6 +469,7 @@ describe("runner API", () => {
     const body = afterApproval.json<{
       approvals: Array<{ type: string; status: string }>;
       diff: { filesChanged: string[] };
+      e2eArtifacts: Array<{ command: string; reportUrl: string }>;
       projectContext: { hasFrontend: boolean; recommendedCommands: { e2e?: string } };
       tests: Array<{ command: string; status: string }>;
     }>();
@@ -481,6 +490,12 @@ describe("runner API", () => {
       expect.arrayContaining(["pnpm lint", "pnpm typecheck", "pnpm test", "pnpm test:e2e"])
     );
     expect(body.tests.every((test) => test.status === "PASSED")).toBe(true);
+    expect(body.e2eArtifacts).toEqual([
+      expect.objectContaining({
+        command: "pnpm test:e2e",
+        reportUrl: expect.stringContaining("playwright-report/index.html")
+      })
+    ]);
   });
 
   it("approves PR creation after the PR approval gate", async () => {

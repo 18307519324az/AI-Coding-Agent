@@ -3,6 +3,7 @@ import type {
   AgentTask,
   Approval,
   DiffSummary,
+  E2eArtifact,
   Repository,
   TestResult
 } from "@ai-coding-agent/shared";
@@ -161,6 +162,23 @@ export const testResults: TestResult[] = [
   }
 ];
 
+export const e2eArtifacts: E2eArtifact[] = [
+  {
+    id: "e2e_login",
+    taskId: "task_login",
+    command: "pnpm test:e2e login.spec.ts",
+    reportUrl: "artifacts/task_login/e2e/playwright-report/index.html",
+    screenshots: [
+      {
+        name: "Login form ready",
+        path: "artifacts/task_login/e2e/login-ready.png",
+        description: "Login form with enabled sign-in button after regression coverage."
+      }
+    ],
+    createdAt: new Date("2026-05-31T09:22:30Z")
+  }
+];
+
 export const diffSummary: DiffSummary = {
   taskId: "task_login",
   filesChanged: ["apps/web/app/login/page.tsx", "apps/web/tests/login.spec.ts"],
@@ -181,4 +199,3 @@ export function getRepository(repositoryId: string): Repository | undefined {
 export function getTask(taskId: string): AgentTask | undefined {
   return tasks.find((task) => task.id === taskId);
 }
-

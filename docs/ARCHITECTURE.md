@@ -53,6 +53,8 @@ The runner exposes:
 - `POST /api/jobs/process-next`
 - `POST /api/workspaces/cleanup`
 
+Task detail responses include approvals, logs, diff, test results, related jobs, and E2E artifact references for Playwright reports and representative screenshots.
+
 The runner can operate in two execution modes:
 
 - `mock`: deterministic task flow for UI iteration, local tests, and demos without cloning external repositories.
@@ -67,7 +69,7 @@ In live PR mode, the PR approval gate also publishes the prepared branch through
 
 The runner starts a workspace cleanup worker unless `RUNNER_WORKSPACE_CLEANUP=disabled`. Cleanup only removes task-scoped directories under `WORKSPACE_ROOT` for terminal tasks older than `RUNNER_WORKSPACE_RETENTION_HOURS`; active and recently updated tasks are retained.
 
-The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, logs, diffs, tests, repositories, and runner jobs. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
+The MVP store is in-memory by default, JSON file-backed with `RUNNER_STORE_FILE`, or SQLite-backed with `RUNNER_SQLITE_FILE` / `DATABASE_URL=file:...`. It persists tasks, approvals, logs, diffs, tests, E2E artifact references, repositories, and runner jobs. The Prisma schema and runner `db:*` scripts define the relational SQLite shape for a fuller database-backed implementation.
 
 ### Agent Core
 

@@ -252,6 +252,7 @@ export function createServer(store: RunnerStore = createStore(), options: Server
       logs: store.logs.get(taskId) ?? [],
       repository: store.repositories.get(task.repositoryId),
       tests: store.tests.get(taskId) ?? [],
+      e2eArtifacts: store.e2eArtifacts.get(taskId) ?? [],
       diff: store.diffs.get(taskId),
       jobs: listJobs(store).filter((job) => job.taskId === taskId)
     };

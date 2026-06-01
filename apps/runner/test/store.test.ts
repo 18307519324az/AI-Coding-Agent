@@ -22,6 +22,16 @@ describe("runner store persistence", () => {
       provider: "github",
       createdAt: new Date("2026-06-01T01:00:00Z")
     });
+    store.e2eArtifacts.set("task_1", [
+      {
+        id: "e2e_1",
+        taskId: "task_1",
+        command: "pnpm test:e2e",
+        reportUrl: "artifacts/task_1/e2e/playwright-report/index.html",
+        screenshots: [{ name: "Task detail", path: "artifacts/task_1/e2e/task-detail.png" }],
+        createdAt: new Date("2026-06-01T01:05:00Z")
+      }
+    ]);
     persistStore(store);
 
     const restored = createFileBackedStore(filePath);
@@ -29,6 +39,11 @@ describe("runner store persistence", () => {
     expect(restored.repositories.get("repo_1")).toMatchObject({
       owner: "acme",
       name: "portal"
+    });
+    expect(restored.e2eArtifacts.get("task_1")?.[0]?.createdAt).toBeInstanceOf(Date);
+    expect(restored.e2eArtifacts.get("task_1")?.[0]).toMatchObject({
+      command: "pnpm test:e2e",
+      reportUrl: "artifacts/task_1/e2e/playwright-report/index.html"
     });
 
     store.close?.();

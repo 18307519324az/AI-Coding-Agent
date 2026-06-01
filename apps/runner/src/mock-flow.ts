@@ -8,12 +8,13 @@ import type {
   AgentTask,
   Approval,
   DiffSummary,
+  E2eArtifact,
   ProjectContext,
   Repository,
   ResolvedCreateTaskRequest,
   TestResult
 } from "@ai-coding-agent/shared";
-import { appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
+import { appendE2eArtifact, appendLog, appendTest, persistStore, type RunnerStore, upsertApproval } from "./store";
 import { executeAllowedCommand, type CommandExecutionResult, type CommandRunner } from "./command-executor";
 import { createId } from "./ids";
 import { createRunLog } from "./log";
@@ -186,6 +187,24 @@ function createTestResultFromExecution(taskId: string, result: CommandExecutionR
     output: result.output,
     durationMs: result.durationMs
   });
+}
+
+function createE2eArtifact(task: AgentTask, result: TestResult): E2eArtifact {
+  const artifactRoot = `artifacts/${task.id}/e2e`;
+  return {
+    id: createId("e2e"),
+    taskId: task.id,
+    command: result.command,
+    reportUrl: `${artifactRoot}/playwright-report/index.html`,
+    screenshots: [
+      {
+        name: "Task detail verification",
+        path: `${artifactRoot}/task-detail.png`,
+        description: "Representative browser state captured during E2E verification."
+      }
+    ],
+    createdAt: new Date()
+  };
 }
 
 function createVerificationResults(task: AgentTask): VerificationResults {
@@ -664,6 +683,7 @@ export async function approvePlanFlow(
     if (!shouldExecuteCommands) {
       appendTest(store, verification.e2e);
     }
+    appendE2eArtifact(store, createE2eArtifact(task, verification.e2e));
     appendLog(store, createRunLog({
       taskId: task.id,
       level: verification.failureStatus === "FAILED_E2E" ? "error" : "info",

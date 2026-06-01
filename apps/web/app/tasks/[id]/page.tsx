@@ -79,6 +79,7 @@ export default async function TaskDetailPage({
 
   const repo = task.repository;
   const taskApprovals = task.approvals;
+  const taskE2eArtifacts = task.e2eArtifacts;
   const taskLogs = task.logs;
   const taskTests = task.tests;
   const approvalViews = taskApprovals.map((approval) => ({
@@ -250,6 +251,34 @@ export default async function TaskDetailPage({
           )}
         </section>
       </div>
+
+      <section className="panel" style={{ marginTop: 16 }}>
+        <h2>E2E Report</h2>
+        {taskE2eArtifacts.length === 0 ? (
+          <div className="empty-state">
+            <strong>No browser artifacts yet</strong>
+            <span className="muted small">Playwright report and screenshot references appear after E2E verification.</span>
+          </div>
+        ) : (
+          <div className="timeline">
+            {taskE2eArtifacts.map((artifact) => (
+              <div className="timeline-item" key={artifact.id}>
+                <strong>{artifact.command}</strong>
+                <span className="muted small">{artifact.createdAt.toLocaleString()}</span>
+                <p className="small">Report: {artifact.reportUrl}</p>
+                <ul>
+                  {artifact.screenshots.map((screenshot) => (
+                    <li key={screenshot.path}>
+                      <strong>{screenshot.name}</strong>: {screenshot.path}
+                      {screenshot.description ? <span className="muted"> - {screenshot.description}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </>
   );
 }

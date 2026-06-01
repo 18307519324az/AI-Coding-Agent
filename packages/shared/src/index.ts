@@ -165,6 +165,23 @@ export const TestResultSchema = z.object({
 });
 export type TestResult = z.infer<typeof TestResultSchema>;
 
+export const E2eScreenshotSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+  description: z.string().optional()
+});
+export type E2eScreenshot = z.infer<typeof E2eScreenshotSchema>;
+
+export const E2eArtifactSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  command: z.string(),
+  reportUrl: z.string(),
+  screenshots: z.array(E2eScreenshotSchema),
+  createdAt: z.coerce.date()
+});
+export type E2eArtifact = z.infer<typeof E2eArtifactSchema>;
+
 export const RunnerJobSchema = z.object({
   id: z.string(),
   taskId: z.string().optional(),

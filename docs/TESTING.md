@@ -47,6 +47,7 @@ Covered in `apps/runner/test`:
 - Workspace project analysis.
 - OpenAI model adapter response validation.
 - Model-generated implementation file application.
+- E2E artifact recording for Playwright reports and screenshots.
 - Git branch publishing guardrails.
 - Command executor workspace boundary, `.env` guard, and sensitive environment filtering.
 - Store persistence, including SQLite snapshot storage.
@@ -64,6 +65,7 @@ Covered in `apps/web/tests` with Playwright:
 - Dashboard task queue and approval state.
 - Create Task page loading, error, disabled, and success states through the server-side Runner proxy.
 - Task detail plan, diff, logs, tests, and approval controls.
+- Task detail E2E report and screenshot artifact display.
 - Task detail approve-plan and approve-PR actions through the server-side Runner proxy.
 - Repository form save flow against a Runner started with API key auth in test setup.
 

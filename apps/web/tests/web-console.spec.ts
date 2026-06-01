@@ -42,7 +42,9 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
   await expect(page.getByRole("heading", { name: "Execution Plan" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Project Context" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Diff Preview" })).toBeVisible();
-  await expect(page.getByText("pnpm test:e2e login.spec.ts")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "E2E Report" })).toBeVisible();
+  await expect(page.getByText("playwright-report/index.html")).toBeVisible();
+  await expect(page.getByText("pnpm test:e2e login.spec.ts").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
 });
 
