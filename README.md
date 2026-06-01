@@ -100,3 +100,14 @@ The default implementation keeps a deterministic mock flow for product iteration
 In queued mode, `POST /api/tasks` returns `202` with a `jobId`, task details include related jobs, `GET /api/jobs` lists queue state, and the runner entrypoint starts a non-overlapping worker that processes the next queued job on `RUNNER_JOB_WORKER_INTERVAL_MS`. `POST /api/jobs/process-next` remains available for operational retries and local debugging.
 
 The runner also starts a workspace cleanup worker by default. It removes only terminal task directories under `WORKSPACE_ROOT` after the retention window, and `POST /api/workspaces/cleanup` can trigger the same cleanup pass manually.
+
+## Staging
+
+```bash
+cp deploy/staging.env.example .env.staging
+docker compose --env-file .env.staging -f deploy/staging.compose.yml up --build
+```
+
+Use `docker-compose --env-file .env.staging -f deploy/staging.compose.yml up --build` on hosts that still provide the standalone Compose CLI.
+
+The staging compose stack runs Web and Runner separately, protects Runner with `RUNNER_API_KEY`, and keeps workspaces/artifacts in named Docker volumes.

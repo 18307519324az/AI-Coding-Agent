@@ -19,6 +19,7 @@ User
 - `packages/agent-core`: pure Agent logic: state transitions, command policy, redaction, GitHub URL parsing, plan and PR body helpers.
 - `.agents/skills`: repository-level Codex skills for repeatable development workflows.
 - `evals`: regression cases for Agent behavior.
+- `deploy`: staging Dockerfiles, compose wiring, and example environment for Web + Runner.
 
 ## Runtime Components
 

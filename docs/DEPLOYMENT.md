@@ -65,6 +65,26 @@ When workspace cleanup is enabled, terminal task directories under `WORKSPACE_RO
 
 Mount `RUNNER_ARTIFACT_DIR` on durable storage if Playwright reports and screenshots must survive runner restarts or redeploys.
 
+## Staging With Docker Compose
+
+The repository includes a staging compose stack for a self-hosted VM or container host.
+
+```bash
+cp deploy/staging.env.example .env.staging
+docker compose --env-file .env.staging -f deploy/staging.compose.yml up --build
+```
+
+Use `docker-compose --env-file .env.staging -f deploy/staging.compose.yml up --build` on hosts that still provide the standalone Compose CLI.
+
+Checks:
+
+```bash
+curl http://localhost:8787/health
+curl -H "Authorization: Bearer $RUNNER_API_KEY" http://localhost:8787/api/metrics
+```
+
+The compose stack keeps Runner workspaces and artifacts in named Docker volumes. Keep real secrets in `.env.staging` or the platform secret manager; do not edit `deploy/staging.env.example` with live credentials.
+
 ## Deployment Checklist
 
 - Secrets are stored in platform secret manager.
@@ -73,6 +93,7 @@ Mount `RUNNER_ARTIFACT_DIR` on durable storage if Playwright reports and screens
 - GitHub token is repository-scoped.
 - Runner API key matches the Web service secret.
 - Web auth password and session secret are configured for the console.
+- Staging compose or platform deployment has passed `/health` and `/api/metrics` checks.
 - Job worker concurrency and retry limits match runner host capacity.
 - Workspace cleanup policy is enabled.
 - E2E artifact storage is on the intended volume.
