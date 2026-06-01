@@ -113,6 +113,30 @@ LIVE_PR_SMOKE_RESULT_FILE=.runner-data/live-pr-smoke-result.json
 
 Use only a disposable test repository. The harness rejects repository URLs that contain credentials, redacts errors before printing, fails by default if no repository verification command runs, and can save a JSON result artifact containing the PR URL, branch, marker path, and test command statuses.
 
+## Live Issue-to-PR Smoke
+
+`pnpm smoke:live-issue-pr` exercises GitHub issue intake plus the same live PR path. It fetches the issue, hydrates the task title and prompt from the issue content, applies a bounded marker file, runs verification, publishes a branch, and creates a draft PR.
+
+Required environment:
+
+```bash
+LIVE_ISSUE_PR_SMOKE_CONFIRM=create-draft-pr
+LIVE_ISSUE_PR_SMOKE_ISSUE_URL=https://github.com/example/test-repo/issues/1
+GITHUB_TOKEN=...
+```
+
+Optional environment:
+
+```bash
+LIVE_ISSUE_PR_SMOKE_BASE_BRANCH=main
+LIVE_ISSUE_PR_SMOKE_ALLOW_INSTALL=1
+LIVE_ISSUE_PR_SMOKE_TEST_COMMAND="npm test"
+LIVE_ISSUE_PR_SMOKE_REQUIRE_TESTS=1
+LIVE_ISSUE_PR_SMOKE_RESULT_FILE=.runner-data/live-issue-pr-smoke-result.json
+```
+
+Use only a disposable issue in a disposable test repository. The harness rejects credentialed issue URLs and can save a redacted JSON result artifact with the issue URL, PR URL, branch, marker path, and verification command statuses.
+
 ## Manual UI Review
 
 Every front-end change should be checked for:

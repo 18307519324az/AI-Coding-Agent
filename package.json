@@ -16,7 +16,8 @@
     "ci": "pnpm lint && pnpm typecheck && pnpm test && pnpm eval && pnpm test:e2e",
     "doctor": "tsx scripts/doctor.ts",
     "eval": "tsx evals/runner.ts",
-    "smoke:live-pr": "tsx scripts/live-pr-smoke.ts"
+    "smoke:live-pr": "tsx scripts/live-pr-smoke.ts",
+    "smoke:live-issue-pr": "tsx scripts/live-issue-pr-smoke.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

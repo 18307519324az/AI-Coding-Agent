@@ -227,6 +227,28 @@ Expected result:
 
 If branch publish fails but the GitHub API token is present, check local Git credential manager or configure a repository-scoped Git credential for push. Do not place tokens in repository URLs or command arguments.
 
+## Live Issue-to-PR Smoke Run
+
+Use this only against a disposable GitHub issue in a disposable test repository.
+
+```bash
+LIVE_ISSUE_PR_SMOKE_CONFIRM=create-draft-pr
+LIVE_ISSUE_PR_SMOKE_ISSUE_URL=https://github.com/example/test-repo/issues/1
+LIVE_ISSUE_PR_SMOKE_RESULT_FILE=.runner-data/live-issue-pr-smoke-result.json
+GITHUB_TOKEN=...
+pnpm smoke:live-issue-pr
+```
+
+Expected result:
+
+- The harness fetches the GitHub issue and hydrates the task title and prompt from it.
+- The task reaches `WAITING_FOR_PLAN_APPROVAL`.
+- Plan approval applies a bounded issue smoke marker file in the cloned workspace.
+- At least one detected or overridden verification command passes unless `LIVE_ISSUE_PR_SMOKE_REQUIRE_TESTS=0`.
+- The PR approval gate publishes an `agent/live-issue-pr-smoke/*` branch.
+- The runner creates a GitHub draft PR and prints the PR URL.
+- If `LIVE_ISSUE_PR_SMOKE_RESULT_FILE` is set, the runner writes a JSON artifact with the issue URL, PR URL, branch, marker path, and verification command statuses.
+
 ## Suspected Secret Leak
 
 Actions:

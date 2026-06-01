@@ -120,6 +120,18 @@ pnpm smoke:live-pr
 
 Set `LIVE_PR_SMOKE_ALLOW_INSTALL=1` when the test repository needs dependency installation before verification. The script rejects repository URLs that embed credentials, stores temporary workspaces under `.runner-data/live-pr-smoke-workspaces`, and can write a redacted result artifact with the created PR URL.
 
+To verify the GitHub Issue-to-PR path, start from an issue URL in the same disposable repository:
+
+```bash
+LIVE_ISSUE_PR_SMOKE_CONFIRM=create-draft-pr \
+LIVE_ISSUE_PR_SMOKE_ISSUE_URL=https://github.com/example/test-repo/issues/1 \
+LIVE_ISSUE_PR_SMOKE_RESULT_FILE=.runner-data/live-issue-pr-smoke-result.json \
+GITHUB_TOKEN=... \
+pnpm smoke:live-issue-pr
+```
+
+This harness reads the GitHub issue, hydrates the task title and prompt from it, then follows the same approved workspace edit, verification, branch publish, and draft PR creation path.
+
 ## Staging
 
 ```bash
