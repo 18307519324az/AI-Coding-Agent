@@ -137,7 +137,7 @@ LIVE_ISSUE_PR_SMOKE_RESULT_FILE=.runner-data/live-issue-pr-smoke-result.json
 
 Use only a disposable issue in a disposable test repository. The harness rejects credentialed issue URLs and can save a redacted JSON result artifact with the issue URL, PR URL, branch, marker path, and verification command statuses.
 
-The `Live GitHub Smoke` GitHub Actions workflow can run both live smoke harnesses with the repository-scoped workflow token. It is manually dispatchable and also runs when the workflow or its support script changes on `main`; successful runs commit redacted proof to `docs/verification/live-github-smoke/`.
+The `Live GitHub Smoke` GitHub Actions workflow can run both live smoke harnesses with the repository-scoped workflow token. It is manual-only so normal pushes do not create live branches, Pull Requests, or notification noise; successful runs commit redacted proof to `docs/verification/live-github-smoke/`.
 
 ## Manual UI Review
 
