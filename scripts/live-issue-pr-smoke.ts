@@ -120,6 +120,23 @@ function createIssueSmokeImplementation(input: {
   });
 }
 
+function createSmokeProjectAnalyzer(input: { skipE2e: boolean }) {
+  return async (rootPath: string) => {
+    const context = await analyzeProject(rootPath);
+    if (!input.skipE2e) {
+      return context;
+    }
+
+    return {
+      ...context,
+      recommendedCommands: {
+        ...context.recommendedCommands,
+        e2e: undefined
+      }
+    };
+  };
+}
+
 function findPendingApproval(store: RunnerStore, taskId: string, type: Approval["type"]): Approval {
   const approval = listTaskApprovals(store, taskId).find((item) => item.type === type && item.status === "PENDING");
   if (!approval) {
@@ -182,6 +199,7 @@ async function main(): Promise<void> {
   );
   const allowInstall = booleanEnv("LIVE_ISSUE_PR_SMOKE_ALLOW_INSTALL", false);
   const requireTests = booleanEnv("LIVE_ISSUE_PR_SMOKE_REQUIRE_TESTS", true);
+  const skipE2e = booleanEnv("LIVE_ISSUE_PR_SMOKE_SKIP_E2E", false);
 
   await mkdir(workspaceRoot, { recursive: true });
 
@@ -203,7 +221,7 @@ async function main(): Promise<void> {
     const task = await createTaskFlow(store, request, {
       workspaceExecution: true,
       repositoryCloner: cloneRepository,
-      projectAnalyzer: analyzeProject,
+      projectAnalyzer: createSmokeProjectAnalyzer({ skipE2e }),
       planGenerator: createIssueSmokePlan({
         issueNumber: issueRef.issueNumber,
         issueUrl,

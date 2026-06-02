@@ -213,6 +213,7 @@ Use this only against a disposable GitHub test repository.
 LIVE_PR_SMOKE_CONFIRM=create-draft-pr
 LIVE_PR_SMOKE_REPOSITORY_URL=https://github.com/example/test-repo
 LIVE_PR_SMOKE_RESULT_FILE=.runner-data/live-pr-smoke-result.json
+LIVE_PR_SMOKE_SKIP_E2E=1
 GITHUB_TOKEN=...
 pnpm smoke:live-pr
 ```
@@ -236,6 +237,7 @@ Use this only against a disposable GitHub issue in a disposable test repository.
 LIVE_ISSUE_PR_SMOKE_CONFIRM=create-draft-pr
 LIVE_ISSUE_PR_SMOKE_ISSUE_URL=https://github.com/example/test-repo/issues/1
 LIVE_ISSUE_PR_SMOKE_RESULT_FILE=.runner-data/live-issue-pr-smoke-result.json
+LIVE_ISSUE_PR_SMOKE_SKIP_E2E=1
 GITHUB_TOKEN=...
 pnpm smoke:live-issue-pr
 ```

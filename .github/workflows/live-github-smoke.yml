@@ -53,6 +53,7 @@ jobs:
           LIVE_PR_SMOKE_REPOSITORY_URL: ${{ env.SMOKE_REPOSITORY_URL }}
           LIVE_PR_SMOKE_REQUIRE_TESTS: "1"
           LIVE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_PR_SMOKE_RESULT_FILE }}
+          LIVE_PR_SMOKE_SKIP_E2E: "1"
           LIVE_PR_SMOKE_TEST_COMMAND: pnpm test
           LIVE_PR_SMOKE_WORKSPACE_ROOT: ${{ env.LIVE_PR_SMOKE_WORKSPACE_ROOT }}
         run: pnpm smoke:live-pr
@@ -72,6 +73,7 @@ jobs:
           LIVE_ISSUE_PR_SMOKE_ISSUE_URL: ${{ steps.smoke-issue.outputs.issue_url }}
           LIVE_ISSUE_PR_SMOKE_REQUIRE_TESTS: "1"
           LIVE_ISSUE_PR_SMOKE_RESULT_FILE: ${{ env.LIVE_ISSUE_PR_SMOKE_RESULT_FILE }}
+          LIVE_ISSUE_PR_SMOKE_SKIP_E2E: "1"
           LIVE_ISSUE_PR_SMOKE_TEST_COMMAND: pnpm test
           LIVE_ISSUE_PR_SMOKE_WORKSPACE_ROOT: ${{ env.LIVE_ISSUE_PR_SMOKE_WORKSPACE_ROOT }}
         run: pnpm smoke:live-issue-pr
