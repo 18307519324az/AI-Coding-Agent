@@ -24,7 +24,7 @@ Status legend:
 | All high-risk actions require approval | Done | Command policy tests for install/push/destructive commands; PR approval gate tests. |
 | Logs do not leak tokens | Done | Redaction helpers and tests; PR creation failure redaction regression in `apps/runner/test/mock-flow.test.ts`. |
 | UI passes de-AI style check | Done | `docs/UI_REVIEW.md` records the 2026-06-02 visual review with screenshots for desktop/mobile dashboard, task detail, jobs, settings, and create-task error state. |
-| CI passes | Done | `pnpm run ci` passed locally before this matrix update; GitHub Actions workflow exists at `.github/workflows/ci.yml`. |
+| CI passes | Done | GitHub Actions CI passed for the live smoke evidence commit `339d3db` at https://github.com/18307519324az/AI-Coding-Agent/actions/runs/26793681240. |
 
 ## v1 Completion Definition
 
@@ -41,7 +41,7 @@ Status legend:
 | Supports at least 5 eval cases | Done | Six eval cases exist; two run fixture-backed runner flow evals. |
 | UI reaches real SaaS product quality | Done | Visual review artifacts in `docs/ui-review/2026-06-02/` cover operational navigation, metrics, task queue, approvals, logs, traces, diffs, tests, jobs, settings, error state, and mobile dashboard. |
 | README lets a new user run within 10 minutes | Done | Quick Start includes `corepack enable`, `pnpm install`, `pnpm run doctor`, and `pnpm dev`; `.env.example` documents local mock defaults and integration credentials. |
-| CI passes | Done | Local full CI passed before this matrix update. |
+| CI passes | Done | GitHub Actions CI passed for the live smoke evidence commit `339d3db` at https://github.com/18307519324az/AI-Coding-Agent/actions/runs/26793681240. |
 | First-release storage and queue backend selected | Done | `docs/RELEASE_DECISIONS.md` scopes first release to single-host durable JSON/SQLite snapshot storage with same-host worker file leasing; PostgreSQL/Redis/BullMQ are follow-up scale milestones. |
 | At least one real test repository PR created successfully | Done | Live smoke created two real draft PRs in the test repository: https://github.com/18307519324az/AI-Coding-Agent/pull/1 and https://github.com/18307519324az/AI-Coding-Agent/pull/3. |
 
