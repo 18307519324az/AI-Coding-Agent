@@ -9,12 +9,14 @@ export async function forwardRunnerPost(path: string, request: Request): Promise
       headers.set("Content-Type", contentType);
     } else if (body) {
       headers.set("Content-Type", "application/json");
+    } else {
+      headers.set("Content-Type", "application/json");
     }
 
     const response = await fetch(`${runnerBaseUrl}${path}`, {
       method: "POST",
       headers: createRunnerHeaders(headers),
-      body: body || undefined,
+      body: body || "{}",
       cache: "no-store"
     });
     const responseBody = await response.text();

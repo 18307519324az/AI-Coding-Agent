@@ -68,7 +68,11 @@ export function TaskApprovalPanel({ approvals, prDraft, taskId }: TaskApprovalPa
       const response = await fetch(
         `/api/runner/tasks/${encodeURIComponent(taskId)}/approvals/${encodeURIComponent(approval.id)}/approve`,
         {
-          method: "POST"
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: "{}"
         }
       );
       if (!response.ok) {

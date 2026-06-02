@@ -102,6 +102,15 @@ test("task detail shows plan, diff, logs, tests, and approval controls", async (
 
 test("task detail approval controls execute runner approval flow", async ({ page }) => {
   await signIn(page);
+  const approvalRequests: Array<{ contentType?: string; postData: string | null }> = [];
+  await page.route("**/api/runner/tasks/*/approvals/*/approve", async (route) => {
+    const request = route.request();
+    approvalRequests.push({
+      contentType: request.headers()["content-type"],
+      postData: request.postData()
+    });
+    await route.continue();
+  });
   await page.goto("/tasks/new");
 
   await page.getByLabel("Repository URL").fill("https://github.com/acme/approval-flow");
@@ -114,10 +123,17 @@ test("task detail approval controls execute runner approval flow", async ({ page
   await page.getByRole("button", { name: "Approve plan and start implementation" }).click();
   await expect(page.getByText("PLAN approved. Refreshing task state.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Approve PR" })).toBeVisible();
+  expect(approvalRequests[0]).toMatchObject({
+    contentType: "application/json",
+    postData: "{}"
+  });
 
   await page.getByRole("button", { name: "Approve PR" }).click();
   await expect(page.getByText("CREATE PR approved. Refreshing task state.")).toBeVisible();
   await expect(page.locator("header").getByText("COMPLETED")).toBeVisible();
+  expect(approvalRequests).toHaveLength(2);
+  expect(approvalRequests.map((request) => request.postData)).toEqual(["{}", "{}"]);
+  expect(approvalRequests.every((request) => request.contentType === "application/json")).toBe(true);
 });
 
 test("repository form saves through the runner", async ({ page }) => {
