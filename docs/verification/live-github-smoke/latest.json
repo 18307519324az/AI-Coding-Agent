@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-06-02T01:55:30.387Z",
+  "verificationSource": "local smoke harness with Git Credential Manager credentials",
+  "repository": "18307519324az/AI-Coding-Agent",
+  "commit": "2280528e67a40d33672c049952d646e1adccb263",
+  "livePr": {
+    "completedAt": "2026-06-02T01:53:00.106Z",
+    "repositoryUrl": "https://github.com/18307519324az/AI-Coding-Agent",
+    "baseBranch": "main",
+    "taskId": "task_e4a59848756d457c",
+    "branchName": "agent/live-pr-smoke/live-pr-smoke-20260602t015217z",
+    "prUrl": "https://github.com/18307519324az/AI-Coding-Agent/pull/1",
+    "markerPath": "ai-coding-agent-smoke/20260602T015217Z.md",
+    "tests": [
+      {
+        "command": "pnpm install",
+        "status": "PASSED",
+        "durationMs": 5044
+      },
+      {
+        "command": "pnpm lint",
+        "status": "PASSED",
+        "durationMs": 8882
+      },
+      {
+        "command": "pnpm typecheck",
+        "status": "PASSED",
+        "durationMs": 9157
+      },
+      {
+        "command": "pnpm test",
+        "status": "PASSED",
+        "durationMs": 5872
+      }
+    ]
+  },
+  "liveIssuePr": {
+    "completedAt": "2026-06-02T01:54:20.501Z",
+    "repositoryUrl": "https://github.com/18307519324az/AI-Coding-Agent",
+    "issueUrl": "https://github.com/18307519324az/AI-Coding-Agent/issues/2",
+    "issueNumber": 2,
+    "issueTitle": "AI Coding Agent live issue smoke 20260602T015339Z",
+    "baseBranch": "main",
+    "taskId": "task_7c276026d13a46b4",
+    "branchName": "agent/live-issue-pr-smoke/ai-coding-agent-live-issue-smoke-20260602t015339",
+    "prUrl": "https://github.com/18307519324az/AI-Coding-Agent/pull/3",
+    "markerPath": "ai-coding-agent-issue-smoke/issue-2-20260602T015342Z.md",
+    "tests": [
+      {
+        "command": "pnpm install",
+        "status": "PASSED",
+        "durationMs": 5723
+      },
+      {
+        "command": "pnpm lint",
+        "status": "PASSED",
+        "durationMs": 8968
+      },
+      {
+        "command": "pnpm typecheck",
+        "status": "PASSED",
+        "durationMs": 8633
+      },
+      {
+        "command": "pnpm test",
+        "status": "PASSED",
+        "durationMs": 6033
+      }
+    ]
+  }
+}
